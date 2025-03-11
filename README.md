@@ -31,9 +31,10 @@ This project will focus on optimizing transportation in a supplier-customer syst
 - **Libraries:** (to be determined during development)
 - **Interface:** Desktop
 
-## Authors
+## Collaborators
 The project is being developed as part of the team consist of:
-[![WinterWollf](https://img.shields.io/badge/GitHub-reKOmo-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/WinterWollf)  
+
+[![WinterWollf](https://img.shields.io/badge/GitHub-WinterWollf-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/WinterWollf)  
 [![reKOmo](https://img.shields.io/badge/GitHub-reKOmo-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/reKOmo)  
 [![PawelS12](https://img.shields.io/badge/GitHub-PawelS12-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/PawelS12)  
 
