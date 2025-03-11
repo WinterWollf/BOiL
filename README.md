@@ -34,17 +34,9 @@ This project will focus on optimizing transportation in a supplier-customer syst
 ## Collaborators
 The project is being developed as part of the team consist of:
 
-<p align="center">
-  <a href="https://github.com/WinterWollf">
-    <img src="https://img.shields.io/badge/GitHub-WinterWollf-181717?logo=github&logoColor=white&style=for-the-badge&label=WinterWollf"/>
-  </a>
-  <a href="https://github.com/reKOmo">
-    <img src="https://img.shields.io/badge/GitHub-reKOmo-181717?logo=github&logoColor=white&style=for-the-badge&label=reKOmo"/>
-  </a>
-  <a href="https://github.com/PawelS12">
-    <img src="https://img.shields.io/badge/GitHub-PawelS12-181717?logo=github&logoColor=white&style=for-the-badge&label=PawelS12"/>
-  </a>
-</p>
+[![WinterWollf](https://img.shields.io/badge/GitHub-WinterWollf-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/WinterWollf)  
+[![reKOmo](https://img.shields.io/badge/GitHub-reKOmo-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/reKOmo)  
+[![PawelS12](https://img.shields.io/badge/GitHub-PawelS12-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/PawelS12)  
 
 ---
 This README will be updated as the project progresses.
