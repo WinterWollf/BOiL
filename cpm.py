@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
 import networkx as nx
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import tkinter as tk
 
 
 class CPM:
