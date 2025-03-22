@@ -83,16 +83,19 @@ class CPM:
 
     def drawAON(self) -> None:
         """
-        Draws an Activity on Node (AON) Newtork Diagram
+        Draws an Activity on Node (AON) network diagram.
+        Activities are positioned based on their topological levels and Early Start (ES) times.
         """
         G = nx.DiGraph()
 
         G.add_node("START", label="START\nES: 0\nEF: 0")
-        G.add_node("KONIEC",
-                   label=f"KONIEC\nES: {max(a.EF for a in self.activities.values())}\nEF: {max(a.EF for a in self.activities.values())}")
+        G.add_node("END",
+                   label=f"END\nES: {max(a.EF for a in self.activities.values())}\nEF: {max(a.EF for a in self.activities.values())}")
 
+        # Activity nodes
         for name, act in self.activities.items():
-            label = f"{name}\nDur: {act.duration}\nES: {act.ES}\nEF: {act.EF}"
+            # label = f"{name}\nDur: {act.duration}\nES: {act.ES}\nEF: {act.EF}"
+            label = f"{name}\nES: {act.ES}   T: {act.duration}   EF: {act.EF}\n\nLS: {act.LS}   R: {act.reserve}   LF: {act.LF}"
             G.add_node(name, label=label)
 
         for name, act in self.activities.items():
@@ -103,45 +106,73 @@ class CPM:
             for pred in act.predecessors:
                 G.add_edge(pred, name)
 
-        max_EF = max(a.EF for a in self.activities.values())
+        # max_EF = max(a.EF for a in self.activities.values())
         for name, act in self.activities.items():
             successors = [s for s in self.activities.values() if name in s.predecessors]
             if not successors:
-                G.add_edge(name, "KONIEC")
+                G.add_edge(name, "END")
+
+        topo_order = list(nx.topological_sort(G))
+        levels = {}
+        for node in topo_order:
+            predecessors = list(G.predecessors(node))
+            if not predecessors:
+                levels[node] = 0
+            else:
+                levels[node] = max(levels[pred] for pred in predecessors) + 1
+
+        level_groups = {}
+        for node, level in levels.items():
+            if level not in level_groups:
+                level_groups[level] = []
+            level_groups[level].append(node)
 
         pos = {}
-        es_groups = {}
-        for name, act in self.activities.items():
-            es = act.ES
-            if es not in es_groups:
-                es_groups[es] = []
-            es_groups[es].append(name)
+        max_level = max(levels.values())
+        for level in range(max_level + 1):
+            nodes_in_level = level_groups.get(level, [])
+            for i, node in enumerate(nodes_in_level):
+                pos[node] = (level * 3, -i)
 
-        pos["START"] = (-2, 0)
-
-        x_offset = 2  # Offset to shift activities away from Start
-        for es in sorted(es_groups.keys()):
-            activities = es_groups[es]
-            for i, name in enumerate(activities):
-                pos[name] = (es + x_offset, -i)
-
-        pos["KONIEC"] = (max_EF + x_offset, 0)
+        pos["START"] = (-1, 0)
+        pos["END"] = ((max_level + 1) * 3, 0)
 
         critical_nodes = set(self.critical_path)
         regular_nodes = set(self.activities.keys()) - critical_nodes
-        start_end_nodes = {"START", "KONIEC"}
+        start_end_nodes = {"START", "END"}
 
-        nx.draw_networkx_nodes(G, pos, nodelist=list(start_end_nodes),
-                               node_color='lightgreen', node_size=1500,
-                               node_shape='s')
 
-        nx.draw_networkx_nodes(G, pos, nodelist=list(regular_nodes),
-                               node_color='lightblue', node_size=1500,
-                               node_shape='s')
+        # Stare podejscie #
+        ####################
 
-        nx.draw_networkx_nodes(G, pos, nodelist=list(critical_nodes),
-                               node_color='salmon', node_size=1500,
-                               node_shape='s')
+        # nx.draw_networkx_nodes(G, pos, nodelist=list(start_end_nodes),
+        #                        node_color='lightgreen', node_size=6000,
+        #                        node_shape='s')
+        #
+        # nx.draw_networkx_nodes(G, pos, nodelist=list(regular_nodes),
+        #                        node_color='lightblue', node_size=6000,
+        #                        node_shape='s')
+        #
+        # nx.draw_networkx_nodes(G, pos, nodelist=list(critical_nodes),
+        #                        node_color='salmon', node_size=6000,
+        #                        node_shape='s')
+
+        ####################
+
+        # Nowe podejscie #
+
+        for node in start_end_nodes:
+            x, y = pos[node]
+            plt.gca().add_patch(plt.Rectangle((x - 1.5, y - 0.1), 3, 0.2, color='lightgreen', ec='black', zorder=2))
+
+        for node in regular_nodes:
+            x, y = pos[node]
+            plt.gca().add_patch(plt.Rectangle((x - 1.5, y - 0.1), 3, 0.2, color='lightblue', ec='black', zorder=2))
+
+        for node in critical_nodes:
+            x, y = pos[node]
+            plt.gca().add_patch(plt.Rectangle((x - 1.5, y - 0.1), 3, 0.2, color='salmon', ec='black', zorder=2))
+
 
         critical_edges = []
         for i in range(len(self.critical_path) - 1):
@@ -154,7 +185,7 @@ class CPM:
         for name in self.critical_path:
             successors = [s for s in self.activities.values() if name in s.predecessors]
             if not successors:
-                critical_edges.append((name, "KONIEC"))
+                critical_edges.append((name, "END"))
 
         regular_edges = [edge for edge in G.edges() if edge not in critical_edges]
         nx.draw_networkx_edges(G, pos, edgelist=regular_edges, edge_color='gray',
@@ -168,7 +199,7 @@ class CPM:
         labels = nx.get_node_attributes(G, 'label')
         nx.draw_networkx_labels(G, pos, labels, font_size=8)
 
-        plt.title("CPM Network Diagram (Activity on Node)\nRed: Critical Path")
+        plt.title("CPM (Activity on Node)\nRed: Critical Path")
 
         manager = plt.get_current_fig_manager()
         try:
