@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import tkinter as tk
 
 
 class CPM:
@@ -88,16 +90,17 @@ class CPM:
         """
         G = nx.DiGraph()
 
-        G.add_node("START", label="START\nES: 0\nEF: 0")
-        G.add_node("END",
-                   label=f"END\nES: {max(a.EF for a in self.activities.values())}\nEF: {max(a.EF for a in self.activities.values())}")
+        # Dodajemy węzły START i END z odpowiednimi etykietami wewnętrznymi
+        max_ef = max(a.EF for a in self.activities.values())
+        G.add_node("START", label_inside=f"ES: {0}   T: {0}   EF: {0}\n\nLS: {0}   R: {0}   LF: {0}", label_above="START")
+        G.add_node("END", label_inside=f"ES: {max_ef}   T: {max_ef}   EF: {max_ef}\n\nLS: {max_ef}   R: {max_ef}   LF: {max_ef}", label_above="END")
 
-        # Activity nodes
+        # Dodajemy pozostałe węzły z ich etykietami
         for name, act in self.activities.items():
-            # label = f"{name}\nDur: {act.duration}\nES: {act.ES}\nEF: {act.EF}"
-            label = f"{name}\nES: {act.ES}   T: {act.duration}   EF: {act.EF}\n\nLS: {act.LS}   R: {act.reserve}   LF: {act.LF}"
-            G.add_node(name, label=label)
+            label_inside = f"ES: {act.ES}   T: {act.duration}   EF: {act.EF}\n\nLS: {act.LS}   R: {act.reserve}   LF: {act.LF}"
+            G.add_node(name, label_inside=label_inside, label_above=name)
 
+        # Dodajemy krawędzie
         for name, act in self.activities.items():
             if not act.predecessors:
                 G.add_edge("START", name)
@@ -106,12 +109,12 @@ class CPM:
             for pred in act.predecessors:
                 G.add_edge(pred, name)
 
-        # max_EF = max(a.EF for a in self.activities.values())
         for name, act in self.activities.items():
             successors = [s for s in self.activities.values() if name in s.predecessors]
             if not successors:
                 G.add_edge(name, "END")
 
+        # Obliczamy poziomy topologiczne
         topo_order = list(nx.topological_sort(G))
         levels = {}
         for node in topo_order:
@@ -127,53 +130,36 @@ class CPM:
                 level_groups[level] = []
             level_groups[level].append(node)
 
+        # Pozycjonowanie węzłów
         pos = {}
         max_level = max(levels.values())
         for level in range(max_level + 1):
             nodes_in_level = level_groups.get(level, [])
             for i, node in enumerate(nodes_in_level):
-                pos[node] = (level * 3, -i)
+                pos[node] = (level * 5, -i * 2)
 
         pos["START"] = (-1, 0)
-        pos["END"] = ((max_level + 1) * 3, 0)
+        pos["END"] = ((max_level + 1) * 5, 0)
 
+        # Rysowanie prostokątów dla węzłów
         critical_nodes = set(self.critical_path)
         regular_nodes = set(self.activities.keys()) - critical_nodes
         start_end_nodes = {"START", "END"}
 
-
-        # Stare podejscie #
-        ####################
-
-        # nx.draw_networkx_nodes(G, pos, nodelist=list(start_end_nodes),
-        #                        node_color='lightgreen', node_size=6000,
-        #                        node_shape='s')
-        #
-        # nx.draw_networkx_nodes(G, pos, nodelist=list(regular_nodes),
-        #                        node_color='lightblue', node_size=6000,
-        #                        node_shape='s')
-        #
-        # nx.draw_networkx_nodes(G, pos, nodelist=list(critical_nodes),
-        #                        node_color='salmon', node_size=6000,
-        #                        node_shape='s')
-
-        ####################
-
-        # Nowe podejscie #
-
         for node in start_end_nodes:
             x, y = pos[node]
-            plt.gca().add_patch(plt.Rectangle((x - 1.5, y - 0.1), 3, 0.2, color='lightgreen', ec='black', zorder=2))
+            plt.gca().add_patch(
+                plt.Rectangle((x - 1.7, y - 0.145), 3.4, 0.3, color='lightgreen', ec='black', zorder=2))
 
         for node in regular_nodes:
             x, y = pos[node]
-            plt.gca().add_patch(plt.Rectangle((x - 1.5, y - 0.1), 3, 0.2, color='lightblue', ec='black', zorder=2))
+            plt.gca().add_patch(plt.Rectangle((x - 1.62, y - 0.145), 3.2, 0.3, color='lightblue', ec='black', zorder=2))
 
         for node in critical_nodes:
             x, y = pos[node]
-            plt.gca().add_patch(plt.Rectangle((x - 1.5, y - 0.1), 3, 0.2, color='salmon', ec='black', zorder=2))
+            plt.gca().add_patch(plt.Rectangle((x - 1.62, y - 0.145), 3.2, 0.3, color='salmon', ec='black', zorder=2))
 
-
+        # Określanie krawędzi krytycznych
         critical_edges = []
         for i in range(len(self.critical_path) - 1):
             critical_edges.append((self.critical_path[i], self.critical_path[i + 1]))
@@ -188,6 +174,8 @@ class CPM:
                 critical_edges.append((name, "END"))
 
         regular_edges = [edge for edge in G.edges() if edge not in critical_edges]
+
+        # Rysowanie krawędzi
         nx.draw_networkx_edges(G, pos, edgelist=regular_edges, edge_color='gray',
                                arrows=True, arrowstyle='->', arrowsize=20, width=2,
                                connectionstyle="arc3,rad=0.1", min_target_margin=20)
@@ -196,11 +184,18 @@ class CPM:
                                arrows=True, arrowstyle='->', arrowsize=20, width=2,
                                connectionstyle="arc3,rad=0.1", min_target_margin=20)
 
-        labels = nx.get_node_attributes(G, 'label')
-        nx.draw_networkx_labels(G, pos, labels, font_size=8)
+        # Rysowanie etykiet
+        labels_above = nx.get_node_attributes(G, 'label_above')
+        labels_inside = nx.get_node_attributes(G, 'label_inside')
+
+        label_pos_above = {node: (x, y + 0.25) for node, (x, y) in pos.items()}
+        nx.draw_networkx_labels(G, label_pos_above, labels_above, font_size=10, font_weight='bold')
+        nx.draw_networkx_labels(G, pos, labels_inside, font_size=8)
 
         plt.title("CPM (Activity on Node)\nRed: Critical Path")
+        plt.subplots_adjust(left=0, bottom=0, right=1, top=0.926, wspace=0.2, hspace=0.2)
 
+        # Maksymalizacja okna
         manager = plt.get_current_fig_manager()
         try:
             manager.window.showMaximized()
