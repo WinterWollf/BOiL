@@ -83,7 +83,7 @@ class CPM:
 
     def drawAON(self) -> None:
         """
-        Draws an Activity on Node (AON) network diagram with improved layout, arrow spacing, and legend.
+        Draws an Activity on Node (AON) network diagram.
         """
         G = nx.DiGraph()
 
@@ -281,31 +281,25 @@ class CPM:
 
     def drawAOA(self) -> None:
         """
-        Draws an Activity on Arrow (AOA) network diagram where nodes represent events (states)
-        and edges represent activities (operations). Nodes contain j, t^0_j, t^1_j, and L_j.
+        Draws an Activity on Arrow (AOA) network diagram.
         """
         G = nx.DiGraph()
 
-        # Mapowanie aktywności na wierzchołki (zdarzenia)
         event_counter = 0
-        event_times = {}  # Mapowanie: numer zdarzenia -> czas (dla etykiet)
-        activity_to_edges = {}  # Mapowanie: nazwa aktywności -> (start_event, end_event)
+        event_times = {}
+        activity_to_edges = {}
 
-        # Tworzenie wierzchołka początkowego
         G.add_node(event_counter)
         event_times[event_counter] = 0
         start_event = event_counter
         event_counter += 1
 
-        # Mapowanie: zestaw zakończonych aktywności -> numer zdarzenia
         events = {frozenset(): start_event}
         activity_to_start_event = {}
         activity_to_end_event = {}
 
-        # Przetwarzanie aktywności w kolejności topologicznej
         topo_order = self.topologicalSort()
 
-        # Mapowanie: zestaw następników -> lista aktywności, które mają tych samych następników
         successor_to_activities = {}
         for name in topo_order:
             successors = frozenset([s for s in self.activities.keys() if name in self.activities[s].predecessors])
@@ -317,14 +311,11 @@ class CPM:
             act = self.activities[name]
             predecessors = frozenset(act.predecessors)
 
-            # Zdarzenie początkowe dla aktywności
             if not predecessors:
-                start_event = 0  # Wierzchołek początkowy
+                start_event = 0
             else:
-                # Zdarzenie początkowe to punkt, w którym kończą się wszyscy poprzednicy
                 ending_activities = predecessors
                 if ending_activities not in events:
-                    # Czas zdarzenia to maksymalny EF poprzedników
                     start_time = max(self.activities[pred].EF for pred in predecessors)
                     events[ending_activities] = event_counter
                     event_times[event_counter] = start_time
@@ -333,12 +324,9 @@ class CPM:
                 start_event = events[ending_activities]
             activity_to_start_event[name] = start_event
 
-            # Zdarzenie końcowe dla aktywności
             successors = frozenset([s for s in self.activities.keys() if name in self.activities[s].predecessors])
-            # Jeśli kilka aktywności ma tych samych następników, powinny kończyć się w tym samym wierzchołku
             ending_activities = frozenset(successor_to_activities.get(successors, [name]))
             if ending_activities not in events:
-                # Czas zdarzenia to maksymalny EF wśród tych aktywności
                 end_time = max(self.activities[n].EF for n in ending_activities)
                 events[ending_activities] = event_counter
                 event_times[event_counter] = end_time
@@ -347,11 +335,9 @@ class CPM:
             end_event = events[ending_activities]
             activity_to_end_event[name] = end_event
 
-            # Dodanie krawędzi (aktywności)
             G.add_edge(start_event, end_event, label=name, duration=act.duration, reserve=act.reserve)
             activity_to_edges[name] = (start_event, end_event)
 
-        # Tworzenie wierzchołka końcowego
         end_activities = frozenset([name for name, act in self.activities.items() if
                                     not any(name in s.predecessors for s in self.activities.values())])
         if end_activities not in events:
@@ -364,13 +350,11 @@ class CPM:
         else:
             end_event = events[end_activities]
 
-        # Połączenie ostatnich aktywności z wierzchołkiem końcowym
         for name in end_activities:
             last_event = activity_to_end_event[name]
             if last_event != end_event and not G.has_edge(last_event, end_event):
                 G.add_edge(last_event, end_event, label="", duration=0, reserve=0)
 
-        # Obliczenie t^0_j, t^1_j i L_j dla każdego zdarzenia
         event_earliest = {}
         event_latest = {}
         event_slack = {}
@@ -401,7 +385,6 @@ class CPM:
 
             event_slack[event] = event_latest[event] - event_earliest[event]
 
-        # Ustawienie etykiet wierzchołków
         for event in G.nodes():
             j = event
             t0_j = event_earliest[event]
@@ -410,7 +393,6 @@ class CPM:
             label = f"{j}\n{t0_j:>2}       {t1_j:>2}\n{L_j:>2}"
             G.nodes[event]['label'] = label
 
-        # Pozycjonowanie wierzchołków
         levels = {}
         for node in topo_order:
             predecessors = list(G.predecessors(node))
@@ -426,8 +408,8 @@ class CPM:
         max_level = max(levels.values())
         max_nodes_in_level = max(len(nodes) for nodes in level_groups.values())
 
-        horizontal_spacing = 10.0
-        vertical_spacing = max(4.0, 30.0 / max_nodes_in_level)
+        horizontal_spacing = 12.0
+        vertical_spacing = max(6.0, 40.0 / max_nodes_in_level)
 
         for level in range(max_level + 1):
             nodes_in_level = level_groups.get(level, [])
@@ -436,7 +418,6 @@ class CPM:
             for i, node in enumerate(nodes_in_level):
                 pos[node] = (level * horizontal_spacing, start_y - i * vertical_spacing)
 
-        # Rysowanie diagramu
         fig, ax = plt.subplots(figsize=(max_level * 3 + 4, max_nodes_in_level * vertical_spacing / 2 + 4))
 
         node_size = 2500
@@ -445,26 +426,47 @@ class CPM:
 
         nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_color, node_shape='o', ax=ax)
 
+        edges_by_target = {}
         for edge in G.edges(data=True):
             start, end, data = edge
-            activity_name = data['label']
-            if not activity_name:  # Pomijamy etykiety dla krawędzi "pustych"
-                continue
-            is_critical = activity_name in critical_activities
-            edge_color = 'red' if is_critical else 'black'
-            edge_width = 2.5 if is_critical else 1.5
+            if end not in edges_by_target:
+                edges_by_target[end] = []
+            edges_by_target[end].append((start, end, data))
 
-            (x1, y1), (x2, y2) = pos[start], pos[end]
-            rad = 0.3 if abs(y1 - y2) > 1e-5 else 0.0
-            nx.draw_networkx_edges(G, pos, edgelist=[(start, end)], edge_color=edge_color,
-                                   width=edge_width, arrows=True, arrowstyle='->', arrowsize=20,
-                                   connectionstyle=f"arc3,rad={rad}", ax=ax)
+        for target, edges in edges_by_target.items():
+            num_edges = len(edges)
+            for idx, (start, end, data) in enumerate(edges):
+                activity_name = data['label']
+                if not activity_name:
+                    continue
+                is_critical = activity_name in critical_activities
+                edge_color = 'red' if is_critical else 'black'
+                edge_width = 2.5 if is_critical else 1.5
 
-            mid_x = (x1 + x2) / 2
-            mid_y = (y1 + y2) / 2 + (0.5 if y1 < y2 else -0.5 if y1 > y2 else 0.3)
-            label = f"{activity_name}\nDur: {data['duration']}"
-            ax.text(mid_x, mid_y, label, fontsize=9, ha='center', va='center', fontweight='bold',
-                    bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
+                (x1, y1), (x2, y2) = pos[start], pos[end]
+                if num_edges > 1:
+                    rad = 0.3 + 0.2 * (idx - (num_edges - 1) / 2)
+                else:
+                    rad = 0.0 if abs(y1 - y2) < 1e-5 else 0.3
+
+                nx.draw_networkx_edges(
+                    G, pos, edgelist=[(start, end)], edge_color=edge_color,
+                    width=edge_width, arrows=True, arrowstyle='->', arrowsize=20,
+                    connectionstyle=f"arc3,rad={rad}", ax=ax,
+                    min_target_margin=40
+                )
+
+                t = 0.3
+                mid_x = x1 + t * (x2 - x1)
+                mid_y = y1 + t * (y2 - y1)
+
+                offset_y = 0.3 * (idx - (num_edges - 1) / 2)
+                mid_y += offset_y
+                label = f"{activity_name}\nDur: {data['duration']}"
+                ax.text(
+                    mid_x, mid_y, label, fontsize=9, ha='center', va='center', fontweight='bold',
+                    bbox=dict(facecolor='white', edgecolor='none', alpha=0.7)
+                )
 
         labels = nx.get_node_attributes(G, 'label')
         for node, label in labels.items():
