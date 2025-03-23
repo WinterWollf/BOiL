@@ -541,3 +541,53 @@ class CPM:
         manager.window.resizable(False, False)
 
         plt.show()
+
+    def drawGantt(self) -> None:
+        """
+        Draws a Gantt chart.
+        """
+
+        fig, ax = plt.subplots(figsize=(10, len(self.activities) * 0.5))
+        y_pos = range(len(self.activities))
+
+
+        activity_names = list(self.activities.keys())
+        critical_set = set(self.critical_path)
+
+        for i, name in enumerate(activity_names):
+            act = self.activities[name]
+            color = 'red' if name in critical_set else 'blue'
+            ax.barh(i, act.duration, left=act.ES, height=0.6, color=color, edgecolor='black')
+            ax.text(act.ES + act.duration / 2, i, f"{name} ({act.duration})",
+                    ha='center', va='center', color='white', fontsize=10, fontweight='bold')
+
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(activity_names)
+        ax.set_xlabel('Time')
+        ax.set_title('Gantt chart')
+        ax.invert_yaxis()
+        ax.grid(True, axis='x', linestyle='--', alpha=0.7)
+
+        from matplotlib.patches import Patch
+        legend_elements = [
+            # Patch(facecolor='blue', edgecolor='black', label='Usual activity'),
+            Patch(facecolor='red', edgecolor='black', label='Critical path')
+        ]
+        ax.legend(handles=legend_elements, loc='upper right')
+
+        manager = plt.get_current_fig_manager()
+        try:
+            manager.window.showMaximized()
+        except AttributeError:
+            try:
+                manager.window.state('zoomed')
+            except AttributeError:
+                try:
+                    manager.frame.Maximize(True)
+                except AttributeError:
+                    print("Could not maximize window: backend not supported.")
+        manager.window.resizable(False, False)
+
+        plt.tight_layout()
+        plt.show()
+

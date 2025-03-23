@@ -43,8 +43,9 @@ def main():
     results.calculate()
     results.print()
     results.printCriticalPath()
-    results.drawAON()
-    results.drawAOA()
+    # results.drawAON()
+    # results.drawAOA()
+    results.drawGantt()
 
 
 if __name__ == "__main__":
