@@ -89,13 +89,11 @@ class CPM:
         G = nx.DiGraph()
 
         max_ef = max(a.EF for a in self.activities.values())
-        # Use fixed-width formatting for alignment instead of tabs
         G.add_node("START", label_inside=f"{0:>2}       {0:>2}\n{0:>2}  {0:>2}  {0:>2}", label_above="START")
         G.add_node("END", label_inside=f"{max_ef:>2}       {max_ef:>2}\n{max_ef:>2}  {0:>2}  {max_ef:>2}",
                    label_above="END")
 
         for name, act in self.activities.items():
-            # Use fixed-width formatting for consistent alignment
             label_inside = f"{act.ES:>2}  {act.duration:>2}  {act.EF:>2}\n{act.LS:>2}  {act.reserve:>2}  {act.LF:>2}"
             G.add_node(name, label_inside=label_inside, label_above=name)
 
@@ -137,7 +135,7 @@ class CPM:
         pos["START"] = (-horizontal_spacing, 0)
         pos["END"] = ((max_level + 1) * horizontal_spacing, 0)
 
-        num_nodes = len(self.activities) + 2
+        num_nodes = len(self.activities) + 2  # Total number of nodes (including START and END)
         base_width = 6.0
         base_height = 1.6
         scale_factor = min(1.0, 20.0 / num_nodes)
@@ -145,7 +143,6 @@ class CPM:
         node_height = base_height * scale_factor
         base_font_size = 9
 
-        # Increased figure size
         fig, ax = plt.subplots(figsize=(max_level * 4 + 4, max_nodes_in_level * vertical_spacing / 2 + 4))
 
         critical_nodes = set(self.critical_path)
@@ -182,25 +179,47 @@ class CPM:
 
         regular_horizontal = [edge for edge in regular_edges if is_horizontal_edge(edge)]
         regular_non_horizontal = [edge for edge in regular_edges if not is_horizontal_edge(edge)]
-
         critical_horizontal = [edge for edge in critical_edges if is_horizontal_edge(edge)]
         critical_non_horizontal = [edge for edge in critical_edges if not is_horizontal_edge(edge)]
 
-        nx.draw_networkx_edges(G, pos, edgelist=regular_non_horizontal, edge_color='gray',
-                               arrows=True, arrowstyle='->', arrowsize=20, width=2,
-                               connectionstyle="arc3,rad=0.2", min_target_margin=30)
+        # Calculate offset based on the number of nodes
+        base_offset = 0.2  # Base curvature value
+        scaling_factor = 10.0  # Adjust this to control how quickly the offset grows
+        curvature_offset = base_offset * (num_nodes / scaling_factor)
+        curvature_offset = min(max(curvature_offset, 0.1), 0.5)  # Clamp between 0.1 and 0.5
 
-        nx.draw_networkx_edges(G, pos, edgelist=critical_non_horizontal, edge_color='red',
-                               arrows=True, arrowstyle='->', arrowsize=20, width=2,
-                               connectionstyle="arc3,rad=0.2", min_target_margin=30)
+        # Function to calculate dynamic curvature based on node positions and offset
+        def get_dynamic_rad(edge):
+            (x1, y1), (x2, y2) = pos[edge[0]], pos[edge[1]]
+            vertical_dist = abs(y1 - y2)
+            horizontal_dist = abs(x1 - x2)
+            # Combine the base curvature with the offset
+            rad = curvature_offset * (vertical_dist / (horizontal_dist + 1e-5))  # Avoid division by zero
+            return min(max(rad, 0.1), 0.5)  # Clamp rad between 0.1 and 0.5
 
+        # Draw regular non-horizontal edges with dynamic curvature
+        for edge in regular_non_horizontal:
+            rad = get_dynamic_rad(edge)
+            nx.draw_networkx_edges(G, pos, edgelist=[edge], edge_color='gray',
+                                   arrows=True, arrowstyle='->', arrowsize=25, width=2,
+                                   connectionstyle=f"arc3,rad={rad}", min_target_margin=40)
+
+        # Draw critical non-horizontal edges with dynamic curvature
+        for edge in critical_non_horizontal:
+            rad = get_dynamic_rad(edge)
+            nx.draw_networkx_edges(G, pos, edgelist=[edge], edge_color='red',
+                                   arrows=True, arrowstyle='->', arrowsize=25, width=2.5,
+                                   connectionstyle=f"arc3,rad={rad}", min_target_margin=40)
+
+        # Draw regular horizontal edges
         nx.draw_networkx_edges(G, pos, edgelist=regular_horizontal, edge_color='gray',
-                               arrows=True, arrowstyle='->', arrowsize=20, width=2,
-                               connectionstyle="arc3,rad=0.0", min_target_margin=30)
+                               arrows=True, arrowstyle='->', arrowsize=25, width=2,
+                               connectionstyle="arc3,rad=0.0", min_target_margin=40)
 
+        # Draw critical horizontal edges
         nx.draw_networkx_edges(G, pos, edgelist=critical_horizontal, edge_color='red',
-                               arrows=True, arrowstyle='->', arrowsize=20, width=2,
-                               connectionstyle="arc3,rad=0.0", min_target_margin=30)
+                               arrows=True, arrowstyle='->', arrowsize=25, width=2.5,
+                               connectionstyle="arc3,rad=0.0", min_target_margin=40)
 
         labels_above = nx.get_node_attributes(G, 'label_above')
         labels_inside = nx.get_node_attributes(G, 'label_inside')
@@ -232,22 +251,19 @@ class CPM:
         legend_x = 0.03
         legend_y = 0.98
 
-        legend_string = "Legenda"
-        legend_text = "ES  T  EF\nLS  R  LF"
         ax.text(legend_x, legend_y, "Legenda",
                 ha='left', va='top', fontsize=15, fontstyle="italic", fontweight='600',
-                transform=ax.transAxes)  # Użycie układu osi
+                transform=ax.transAxes)
 
         ax.text(legend_x, legend_y - 0.05, "ES  T  EF\nLS  R  LF",
                 ha='left', va='top', fontsize=12, fontweight='bold',
                 bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'),
-                transform=ax.transAxes)  # Użycie układu osi
+                transform=ax.transAxes)
 
         plt.title("CPM (Activity on Node)\nRed: Critical Path")
         plt.subplots_adjust(left=0.0, bottom=0.0, right=1.0, top=0.93, wspace=0.2, hspace=0.2)
         plt.axis('off')
 
-        # Automatic view adjustment
         ax.set_xlim(min(x - node_width for x, y in pos.values()) - 3,
                     max(x + node_width for x, y in pos.values()) + 3)
         ax.set_ylim(min(y - node_height for x, y in pos.values()) - 3,
