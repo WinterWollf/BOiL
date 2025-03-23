@@ -83,44 +83,37 @@ class CPM:
 
     def drawAON(self) -> None:
         """
-        Draws an Activity on Node (AON) network diagram.
-        Activities are positioned based on their topological levels and Early Start (ES) times.
+        Draws an Activity on Node (AON) network diagram with proper node sizing and positioning.
         """
         G = nx.DiGraph()
 
-        # Dodajemy węzły START i END z odpowiednimi etykietami wewnętrznymi
         max_ef = max(a.EF for a in self.activities.values())
-        G.add_node("START", label_inside=f"ES: {0}   T: {0}   EF: {0}\n\nLS: {0}   R: {0}   LF: {0}", label_above="START")
-        G.add_node("END", label_inside=f"ES: {max_ef}   T: {max_ef}   EF: {max_ef}\n\nLS: {max_ef}   R: {max_ef}   LF: {max_ef}", label_above="END")
+        G.add_node("START", label_inside=f"ES: {0}   T: {0}   EF: {0}\nLS: {0}   R: {0}   LF: {0}",
+                   label_above="START")
+        G.add_node("END",
+                   label_inside=f"ES: {max_ef}   T: {max_ef}   EF: {max_ef}\nLS: {max_ef}   R: {max_ef}   LF: {max_ef}",
+                   label_above="END")
 
-        # Dodajemy pozostałe węzły z ich etykietami
         for name, act in self.activities.items():
-            label_inside = f"ES: {act.ES}   T: {act.duration}   EF: {act.EF}\n\nLS: {act.LS}   R: {act.reserve}   LF: {act.LF}"
+            label_inside = f"ES: {act.ES}   T: {act.duration}   EF: {act.EF}\nLS: {act.LS}   R: {act.reserve}   LF: {act.LF}"
             G.add_node(name, label_inside=label_inside, label_above=name)
 
-        # Dodajemy krawędzie
+        # Adding edges
         for name, act in self.activities.items():
             if not act.predecessors:
                 G.add_edge("START", name)
-
-        for name, act in self.activities.items():
             for pred in act.predecessors:
                 G.add_edge(pred, name)
-
-        for name, act in self.activities.items():
             successors = [s for s in self.activities.values() if name in s.predecessors]
             if not successors:
                 G.add_edge(name, "END")
 
-        # Obliczamy poziomy topologiczne
+        # Calculate positions
         topo_order = list(nx.topological_sort(G))
         levels = {}
         for node in topo_order:
             predecessors = list(G.predecessors(node))
-            if not predecessors:
-                levels[node] = 0
-            else:
-                levels[node] = max(levels[pred] for pred in predecessors) + 1
+            levels[node] = 0 if not predecessors else max(levels[pred] for pred in predecessors) + 1
 
         level_groups = {}
         for node, level in levels.items():
@@ -128,52 +121,59 @@ class CPM:
                 level_groups[level] = []
             level_groups[level].append(node)
 
-        # Pozycjonowanie węzłów
         pos = {}
         max_level = max(levels.values())
+        max_nodes_in_level = max(len(nodes) for nodes in level_groups.values())
+
+        # Dynamic spacing based on number of nodes
+        horizontal_spacing = 6.0
+        vertical_spacing = max(2.0, 20.0 / max_nodes_in_level)
+
         for level in range(max_level + 1):
             nodes_in_level = level_groups.get(level, [])
+            level_height = len(nodes_in_level) * vertical_spacing
+            start_y = level_height / 2
             for i, node in enumerate(nodes_in_level):
-                pos[node] = (level * 5, -i * 2)
+                pos[node] = (level * horizontal_spacing, start_y - i * vertical_spacing)
 
-        pos["START"] = (-1, 0)
-        pos["END"] = ((max_level + 1) * 5, 0)
+        pos["START"] = (-horizontal_spacing, 0)
+        pos["END"] = ((max_level + 1) * horizontal_spacing, 0)
 
-        # Rysowanie prostokątów dla węzłów
+        fig, ax = plt.subplots(figsize=(max_level * 2 + 4, max_nodes_in_level + 2))
+
+        # Node parameters
+        node_width = 3.2
+        node_height = 0.6
         critical_nodes = set(self.critical_path)
         regular_nodes = set(self.activities.keys()) - critical_nodes
         start_end_nodes = {"START", "END"}
 
+        # Draw nodes
         for node in start_end_nodes:
             x, y = pos[node]
-            plt.gca().add_patch(
-                plt.Rectangle((x - 1.7, y - 0.145), 3.4, 0.3, color='lightgreen', ec='black', zorder=2))
+            ax.add_patch(plt.Rectangle((x - node_width / 2, y - node_height / 2), node_width, node_height,
+                                       color='lightgreen', ec='black', zorder=2))
 
         for node in regular_nodes:
             x, y = pos[node]
-            plt.gca().add_patch(plt.Rectangle((x - 1.62, y - 0.145), 3.2, 0.3, color='lightblue', ec='black', zorder=2))
+            ax.add_patch(plt.Rectangle((x - node_width / 2, y - node_height / 2), node_width, node_height,
+                                       color='lightblue', ec='black', zorder=2))
 
         for node in critical_nodes:
             x, y = pos[node]
-            plt.gca().add_patch(plt.Rectangle((x - 1.62, y - 0.145), 3.2, 0.3, color='salmon', ec='black', zorder=2))
+            ax.add_patch(plt.Rectangle((x - node_width / 2, y - node_height / 2), node_width, node_height,
+                                       color='salmon', ec='black', zorder=2))
 
-        # Określanie krawędzi krytycznych
-        critical_edges = []
-        for i in range(len(self.critical_path) - 1):
-            critical_edges.append((self.critical_path[i], self.critical_path[i + 1]))
-
-        for name in self.critical_path:
-            if not self.activities[name].predecessors:
-                critical_edges.append(("START", name))
-
-        for name in self.critical_path:
-            successors = [s for s in self.activities.values() if name in s.predecessors]
-            if not successors:
-                critical_edges.append((name, "END"))
+        # Draw edges
+        critical_edges = [(self.critical_path[i], self.critical_path[i + 1])
+                          for i in range(len(self.critical_path) - 1)]
+        critical_edges.extend([("START", name) for name in self.critical_path
+                               if not self.activities[name].predecessors])
+        critical_edges.extend([(name, "END") for name in self.critical_path
+                               if not [s for s in self.activities.values() if name in s.predecessors]])
 
         regular_edges = [edge for edge in G.edges() if edge not in critical_edges]
 
-        # Rysowanie krawędzi
         nx.draw_networkx_edges(G, pos, edgelist=regular_edges, edge_color='gray',
                                arrows=True, arrowstyle='->', arrowsize=20, width=2,
                                connectionstyle="arc3,rad=0.1", min_target_margin=20)
@@ -182,18 +182,25 @@ class CPM:
                                arrows=True, arrowstyle='->', arrowsize=20, width=2,
                                connectionstyle="arc3,rad=0.1", min_target_margin=20)
 
-        # Rysowanie etykiet
+        # Draw labels
         labels_above = nx.get_node_attributes(G, 'label_above')
         labels_inside = nx.get_node_attributes(G, 'label_inside')
 
-        label_pos_above = {node: (x, y + 0.25) for node, (x, y) in pos.items()}
+        label_pos_above = {node: (x, y + node_height / 2 + 0.2) for node, (x, y) in pos.items()}
+
         nx.draw_networkx_labels(G, label_pos_above, labels_above, font_size=10, font_weight='bold')
-        nx.draw_networkx_labels(G, pos, labels_inside, font_size=8)
+        nx.draw_networkx_labels(G, pos, labels_inside, font_size=7, verticalalignment='center')
 
         plt.title("CPM (Activity on Node)\nRed: Critical Path")
-        plt.subplots_adjust(left=0, bottom=0, right=1, top=0.926, wspace=0.2, hspace=0.2)
+        plt.axis('off')
+        plt.tight_layout()
 
-        # Maksymalizacja okna
+        # Automatic view adjustment
+        ax.set_xlim(min(x - node_width for x, y in pos.values()) - 1,
+                    max(x + node_width for x, y in pos.values()) + 1)
+        ax.set_ylim(min(y - node_height for x, y in pos.values()) - 1,
+                    max(y + node_height for x, y in pos.values()) + 1)
+
         manager = plt.get_current_fig_manager()
         try:
             manager.window.showMaximized()
@@ -206,5 +213,4 @@ class CPM:
                 except AttributeError:
                     print("Could not maximize window: backend not supported.")
 
-        plt.axis('off')
         plt.show()
