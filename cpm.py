@@ -278,3 +278,229 @@ class CPM:
         manager.window.resizable(False, False)
 
         plt.show()
+
+    def drawAOA(self) -> None:
+        """
+        Draws an Activity on Arrow (AOA) network diagram where nodes represent events (states)
+        and edges represent activities (operations). Nodes contain j, t^0_j, t^1_j, and L_j.
+        """
+        G = nx.DiGraph()
+
+        # Mapowanie aktywności na wierzchołki (zdarzenia)
+        event_counter = 0
+        event_times = {}  # Mapowanie: numer zdarzenia -> czas (dla etykiet)
+        activity_to_edges = {}  # Mapowanie: nazwa aktywności -> (start_event, end_event)
+
+        # Tworzenie wierzchołka początkowego
+        G.add_node(event_counter)
+        event_times[event_counter] = 0
+        start_event = event_counter
+        event_counter += 1
+
+        # Mapowanie: zestaw zakończonych aktywności -> numer zdarzenia
+        events = {frozenset(): start_event}
+        activity_to_start_event = {}
+        activity_to_end_event = {}
+
+        # Przetwarzanie aktywności w kolejności topologicznej
+        topo_order = self.topologicalSort()
+
+        # Mapowanie: zestaw następników -> lista aktywności, które mają tych samych następników
+        successor_to_activities = {}
+        for name in topo_order:
+            successors = frozenset([s for s in self.activities.keys() if name in self.activities[s].predecessors])
+            if successors not in successor_to_activities:
+                successor_to_activities[successors] = []
+            successor_to_activities[successors].append(name)
+
+        for name in topo_order:
+            act = self.activities[name]
+            predecessors = frozenset(act.predecessors)
+
+            # Zdarzenie początkowe dla aktywności
+            if not predecessors:
+                start_event = 0  # Wierzchołek początkowy
+            else:
+                # Zdarzenie początkowe to punkt, w którym kończą się wszyscy poprzednicy
+                ending_activities = predecessors
+                if ending_activities not in events:
+                    # Czas zdarzenia to maksymalny EF poprzedników
+                    start_time = max(self.activities[pred].EF for pred in predecessors)
+                    events[ending_activities] = event_counter
+                    event_times[event_counter] = start_time
+                    G.add_node(event_counter)
+                    event_counter += 1
+                start_event = events[ending_activities]
+            activity_to_start_event[name] = start_event
+
+            # Zdarzenie końcowe dla aktywności
+            successors = frozenset([s for s in self.activities.keys() if name in self.activities[s].predecessors])
+            # Jeśli kilka aktywności ma tych samych następników, powinny kończyć się w tym samym wierzchołku
+            ending_activities = frozenset(successor_to_activities.get(successors, [name]))
+            if ending_activities not in events:
+                # Czas zdarzenia to maksymalny EF wśród tych aktywności
+                end_time = max(self.activities[n].EF for n in ending_activities)
+                events[ending_activities] = event_counter
+                event_times[event_counter] = end_time
+                G.add_node(event_counter)
+                event_counter += 1
+            end_event = events[ending_activities]
+            activity_to_end_event[name] = end_event
+
+            # Dodanie krawędzi (aktywności)
+            G.add_edge(start_event, end_event, label=name, duration=act.duration, reserve=act.reserve)
+            activity_to_edges[name] = (start_event, end_event)
+
+        # Tworzenie wierzchołka końcowego
+        end_activities = frozenset([name for name, act in self.activities.items() if
+                                    not any(name in s.predecessors for s in self.activities.values())])
+        if end_activities not in events:
+            end_time = max(self.activities[name].EF for name in end_activities)
+            events[end_activities] = event_counter
+            event_times[event_counter] = end_time
+            G.add_node(event_counter)
+            end_event = event_counter
+            event_counter += 1
+        else:
+            end_event = events[end_activities]
+
+        # Połączenie ostatnich aktywności z wierzchołkiem końcowym
+        for name in end_activities:
+            last_event = activity_to_end_event[name]
+            if last_event != end_event and not G.has_edge(last_event, end_event):
+                G.add_edge(last_event, end_event, label="", duration=0, reserve=0)
+
+        # Obliczenie t^0_j, t^1_j i L_j dla każdego zdarzenia
+        event_earliest = {}
+        event_latest = {}
+        event_slack = {}
+
+        for event, time in event_times.items():
+            event_earliest[event] = time
+            event_latest[event] = float('inf')
+            event_slack[event] = 0
+
+        event_earliest[0] = 0
+        max_time = max(event_times.values())
+        event_latest[end_event] = max_time
+
+        topo_order = list(nx.topological_sort(G))
+        for event in reversed(topo_order):
+            successors = list(G.successors(event))
+            if not successors:
+                event_latest[event] = max_time
+            else:
+                min_successor_time = float('inf')
+                for succ in successors:
+                    for edge in G.edges(data=True):
+                        if edge[0] == event and edge[1] == succ:
+                            duration = edge[2]['duration']
+                            successor_earliest = event_earliest[succ]
+                            min_successor_time = min(min_successor_time, successor_earliest - duration)
+                event_latest[event] = min_successor_time if min_successor_time != float('inf') else max_time
+
+            event_slack[event] = event_latest[event] - event_earliest[event]
+
+        # Ustawienie etykiet wierzchołków
+        for event in G.nodes():
+            j = event
+            t0_j = event_earliest[event]
+            t1_j = event_latest[event]
+            L_j = event_slack[event]
+            label = f"{j}\n{t0_j:>2}       {t1_j:>2}\n{L_j:>2}"
+            G.nodes[event]['label'] = label
+
+        # Pozycjonowanie wierzchołków
+        levels = {}
+        for node in topo_order:
+            predecessors = list(G.predecessors(node))
+            levels[node] = 0 if not predecessors else max(levels[pred] for pred in predecessors) + 1
+
+        level_groups = {}
+        for node, level in levels.items():
+            if level not in level_groups:
+                level_groups[level] = []
+            level_groups[level].append(node)
+
+        pos = {}
+        max_level = max(levels.values())
+        max_nodes_in_level = max(len(nodes) for nodes in level_groups.values())
+
+        horizontal_spacing = 10.0
+        vertical_spacing = max(4.0, 30.0 / max_nodes_in_level)
+
+        for level in range(max_level + 1):
+            nodes_in_level = level_groups.get(level, [])
+            level_height = len(nodes_in_level) * vertical_spacing
+            start_y = level_height / 2
+            for i, node in enumerate(nodes_in_level):
+                pos[node] = (level * horizontal_spacing, start_y - i * vertical_spacing)
+
+        # Rysowanie diagramu
+        fig, ax = plt.subplots(figsize=(max_level * 3 + 4, max_nodes_in_level * vertical_spacing / 2 + 4))
+
+        node_size = 2500
+        node_color = 'lightgreen'
+        critical_activities = set(self.critical_path)
+
+        nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_color, node_shape='o', ax=ax)
+
+        for edge in G.edges(data=True):
+            start, end, data = edge
+            activity_name = data['label']
+            if not activity_name:  # Pomijamy etykiety dla krawędzi "pustych"
+                continue
+            is_critical = activity_name in critical_activities
+            edge_color = 'red' if is_critical else 'black'
+            edge_width = 2.5 if is_critical else 1.5
+
+            (x1, y1), (x2, y2) = pos[start], pos[end]
+            rad = 0.3 if abs(y1 - y2) > 1e-5 else 0.0
+            nx.draw_networkx_edges(G, pos, edgelist=[(start, end)], edge_color=edge_color,
+                                   width=edge_width, arrows=True, arrowstyle='->', arrowsize=20,
+                                   connectionstyle=f"arc3,rad={rad}", ax=ax)
+
+            mid_x = (x1 + x2) / 2
+            mid_y = (y1 + y2) / 2 + (0.5 if y1 < y2 else -0.5 if y1 > y2 else 0.3)
+            label = f"{activity_name}\nDur: {data['duration']}"
+            ax.text(mid_x, mid_y, label, fontsize=9, ha='center', va='center', fontweight='bold',
+                    bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
+
+        labels = nx.get_node_attributes(G, 'label')
+        for node, label in labels.items():
+            x, y = pos[node]
+            ax.text(x, y, label, ha='center', va='center', fontsize=9,
+                    bbox=dict(facecolor='none', edgecolor='none', pad=0))
+
+        legend_x = 0.03
+        legend_y = 0.98
+        ax.text(legend_x, legend_y, "Legenda",
+                ha='left', va='top', fontsize=12, fontstyle="italic", fontweight='600',
+                transform=ax.transAxes)
+        ax.text(legend_x, legend_y - 0.05, "     No.\nES      LS\n      R",
+                ha='left', va='top', fontsize=10, fontweight='bold',
+                bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'),
+                transform=ax.transAxes)
+
+        plt.title("CPM (Activity on Arrow)\nRed Edges: Critical Path")
+        plt.axis('off')
+
+        plt.subplots_adjust(left=0.015, bottom=0.015, right=0.985, top=0.93, wspace=0.2, hspace=0.2)
+
+        ax.set_xlim(min(x for x, y in pos.values()) - 2, max(x for x, y in pos.values()) + 2)
+        ax.set_ylim(min(y for x, y in pos.values()) - 2, max(y for x, y in pos.values()) + 2)
+
+        manager = plt.get_current_fig_manager()
+        try:
+            manager.window.showMaximized()
+        except AttributeError:
+            try:
+                manager.window.state('zoomed')
+            except AttributeError:
+                try:
+                    manager.frame.Maximize(True)
+                except AttributeError:
+                    print("Could not maximize window: backend not supported.")
+        manager.window.resizable(False, False)
+
+        plt.show()

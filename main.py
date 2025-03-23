@@ -12,19 +12,6 @@ def main():
     #     'F': Activity('F', 2, ['D']),
     # }
 
-    # data = {
-    #     'A': Activity('A', 3),
-    #     'B': Activity('B', 4,['A']),
-    #     'C': Activity('C', 6, ['A']),
-    #     'D': Activity('D', 7, ['B']),
-    #     'E': Activity('E', 1, ['D']),
-    #     'F': Activity('F', 2, ['C']),
-    #     'G': Activity('G', 3, ['C']),
-    #     'H': Activity('H', 4, ['G']),
-    #     'I': Activity('I', 1, ['E', 'F', 'H']),
-    #     'J': Activity('J', 2, ['I']),
-    # }
-
     data = {
         'A': Activity('A', 3),
         'B': Activity('B', 4,['A']),
@@ -34,16 +21,30 @@ def main():
         'F': Activity('F', 2, ['C']),
         'G': Activity('G', 3, ['C']),
         'H': Activity('H', 4, ['G']),
-        'I': Activity('I', 1, ['E', 'F', 'H', 'K']),
+        'I': Activity('I', 1, ['E', 'F', 'H']),
         'J': Activity('J', 2, ['I']),
-        'K': Activity('K', 5, ['B']),
     }
+
+    # data = {
+    #     'A': Activity('A', 3),
+    #     'B': Activity('B', 4,['A']),
+    #     'C': Activity('C', 6, ['A']),
+    #     'D': Activity('D', 7, ['B']),
+    #     'E': Activity('E', 1, ['D']),
+    #     'F': Activity('F', 2, ['C']),
+    #     'G': Activity('G', 3, ['C']),
+    #     'H': Activity('H', 4, ['G']),
+    #     'I': Activity('I', 1, ['E', 'F', 'H', 'K']),
+    #     'J': Activity('J', 2, ['I']),
+    #     'K': Activity('K', 5, ['B']),
+    # }
 
     results = CPM(data)
     results.calculate()
     results.print()
     results.printCriticalPath()
-    results.drawAON()
+    # results.drawAON()
+    results.drawAOA()
 
 
 if __name__ == "__main__":
