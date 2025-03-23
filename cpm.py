@@ -281,7 +281,7 @@ class CPM:
 
     def drawAOA(self) -> None:
         """
-        Draws an Activity on Arrow (AOA) network diagram.
+        Draws an Activity on Arrow (AOA) network.
         """
         G = nx.DiGraph()
 
@@ -307,6 +307,8 @@ class CPM:
                 successor_to_activities[successors] = []
             successor_to_activities[successors].append(name)
 
+        activity_to_end_node = {}
+
         for name in topo_order:
             act = self.activities[name]
             predecessors = frozenset(act.predecessors)
@@ -314,17 +316,22 @@ class CPM:
             if not predecessors:
                 start_event = 0
             else:
-                ending_activities = predecessors
-                if ending_activities not in events:
+                predecessor_ends = frozenset([p for p in predecessors])
+                if predecessor_ends not in events:
                     start_time = max(self.activities[pred].EF for pred in predecessors)
-                    events[ending_activities] = event_counter
+                    events[predecessor_ends] = event_counter
                     event_times[event_counter] = start_time
                     G.add_node(event_counter)
+                    for pred in predecessors:
+                        pred_end = activity_to_end_node[pred]
+                        if not G.has_edge(pred_end, event_counter):
+                            G.add_edge(pred_end, event_counter, label="", duration=0, reserve=0)
                     event_counter += 1
-                start_event = events[ending_activities]
+                start_event = events[predecessor_ends]
             activity_to_start_event[name] = start_event
 
             successors = frozenset([s for s in self.activities.keys() if name in self.activities[s].predecessors])
+
             ending_activities = frozenset(successor_to_activities.get(successors, [name]))
             if ending_activities not in events:
                 end_time = max(self.activities[n].EF for n in ending_activities)
@@ -334,6 +341,7 @@ class CPM:
                 event_counter += 1
             end_event = events[ending_activities]
             activity_to_end_event[name] = end_event
+            activity_to_end_node[name] = end_event
 
             G.add_edge(start_event, end_event, label=name, duration=act.duration, reserve=act.reserve)
             activity_to_edges[name] = (start_event, end_event)
@@ -421,10 +429,29 @@ class CPM:
         fig, ax = plt.subplots(figsize=(max_level * 3 + 4, max_nodes_in_level * vertical_spacing / 2 + 4))
 
         node_size = 2500
-        node_color = 'lightgreen'
         critical_activities = set(self.critical_path)
 
-        nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_color, node_shape='o', ax=ax)
+        critical_nodes = set()
+        for activity in critical_activities:
+            start_event, end_event = activity_to_edges[activity]
+            critical_nodes.add(start_event)
+            critical_nodes.add(end_event)
+
+        start_node = 0
+        end_node = end_event
+
+        node_colors = []
+        for node in G.nodes():
+            if node == start_node:
+                node_colors.append('lightgreen')
+            elif node == end_node:
+                node_colors.append('lightcoral')
+            elif node in critical_nodes:
+                node_colors.append('salmon')
+            else:
+                node_colors.append('lightblue')
+
+        nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_colors, node_shape='o', ax=ax)
 
         edges_by_target = {}
         for edge in G.edges(data=True):
@@ -438,6 +465,15 @@ class CPM:
             for idx, (start, end, data) in enumerate(edges):
                 activity_name = data['label']
                 if not activity_name:
+                    edge_color = 'black'
+                    edge_width = 1.0
+                    style = 'dashed'
+                    rad = 0.0 if abs(pos[start][1] - pos[end][1]) < 1e-5 else 0.3
+                    nx.draw_networkx_edges(
+                        G, pos, edgelist=[(start, end)], edge_color=edge_color,
+                        width=edge_width, style=style, arrows=False,
+                        connectionstyle=f"arc3,rad={rad}", ax=ax
+                    )
                     continue
                 is_critical = activity_name in critical_activities
                 edge_color = 'red' if is_critical else 'black'
@@ -459,8 +495,7 @@ class CPM:
                 t = 0.3
                 mid_x = x1 + t * (x2 - x1)
                 mid_y = y1 + t * (y2 - y1)
-
-                offset_y = 0.3 * (idx - (num_edges - 1) / 2)
+                offset_y = 0.5 * (idx - (num_edges - 1) / 2)
                 mid_y += offset_y
                 label = f"{activity_name}\nDur: {data['duration']}"
                 ax.text(
