@@ -1,4 +1,3 @@
-from matplotlib.patches import FancyArrowPatch
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -135,7 +134,7 @@ class CPM:
         pos["START"] = (-horizontal_spacing, 0)
         pos["END"] = ((max_level + 1) * horizontal_spacing, 0)
 
-        num_nodes = len(self.activities) + 2  # Total number of nodes (including START and END)
+        num_nodes = len(self.activities) + 2
         base_width = 6.0
         base_height = 1.6
         scale_factor = min(1.0, 20.0 / num_nodes)
@@ -182,57 +181,46 @@ class CPM:
         critical_horizontal = [edge for edge in critical_edges if is_horizontal_edge(edge)]
         critical_non_horizontal = [edge for edge in critical_edges if not is_horizontal_edge(edge)]
 
-        # Calculate offset based on the number of nodes
-        base_offset = 0.2  # Base curvature value
-        scaling_factor = 10.0  # Adjust this to control how quickly the offset grows
+        base_offset = 0.2
+        scaling_factor = 10.0
         curvature_offset = base_offset * (num_nodes / scaling_factor)
-        curvature_offset = min(max(curvature_offset, 0.1), 0.5)  # Clamp between 0.1 and 0.5
+        curvature_offset = min(max(curvature_offset, 0.1), 0.5)
 
-        # Function to calculate dynamic curvature based on node positions and offset
         def get_dynamic_rad(edge):
             (x1, y1), (x2, y2) = pos[edge[0]], pos[edge[1]]
             vertical_dist = abs(y1 - y2)
             horizontal_dist = abs(x1 - x2)
-            # Combine the base curvature with the offset
-            rad = curvature_offset * (vertical_dist / (horizontal_dist + 1e-5))  # Avoid division by zero
-            return min(max(rad, 0.1), 0.5)  # Clamp rad between 0.1 and 0.5
+            rad = curvature_offset * (vertical_dist / (horizontal_dist + 1e-5))
+            return min(max(rad, 0.1), 0.5)
 
-        # Calculate a dynamic min_target_margin based on node size
         base_margin = 40.0
-        dynamic_margin = base_margin * scale_factor  # Scale the margin with the node size
-        dynamic_margin = max(dynamic_margin, 20.0)  # Ensure a minimum margin for visibility
+        dynamic_margin = base_margin * scale_factor
+        dynamic_margin = max(dynamic_margin, 20.0)
 
-        # Draw regular non-horizontal edges with dynamic curvature
         for edge in regular_non_horizontal:
             rad = get_dynamic_rad(edge)
-            # Adjust the margin based on curvature to ensure consistent spacing
-            adjusted_margin = dynamic_margin * (1 + rad)  # Increase margin slightly for larger curves
+            adjusted_margin = dynamic_margin * (1 + rad)
             nx.draw_networkx_edges(G, pos, edgelist=[edge], edge_color='gray',
                                    arrows=True, arrowstyle='->', arrowsize=25, width=2,
                                    connectionstyle=f"arc3,rad={rad}", min_target_margin=adjusted_margin)
 
-        # Draw critical non-horizontal edges with dynamic curvature
         for edge in critical_non_horizontal:
             rad = get_dynamic_rad(edge)
-            adjusted_margin = dynamic_margin * (1 + rad)  # Increase margin slightly for larger curves
+            adjusted_margin = dynamic_margin * (1 + rad)
             nx.draw_networkx_edges(G, pos, edgelist=[edge], edge_color='red',
                                    arrows=True, arrowstyle='->', arrowsize=25, width=2.5,
                                    connectionstyle=f"arc3,rad={rad}", min_target_margin=adjusted_margin)
 
-        # Draw regular horizontal edges
         nx.draw_networkx_edges(G, pos, edgelist=regular_horizontal, edge_color='gray',
                                arrows=True, arrowstyle='->', arrowsize=25, width=2,
                                connectionstyle="arc3,rad=0.0", min_target_margin=dynamic_margin)
 
-        # Draw critical horizontal edges
         nx.draw_networkx_edges(G, pos, edgelist=critical_horizontal, edge_color='red',
                                arrows=True, arrowstyle='->', arrowsize=25, width=2.5,
                                connectionstyle="arc3,rad=0.0", min_target_margin=dynamic_margin)
 
         labels_above = nx.get_node_attributes(G, 'label_above')
         labels_inside = nx.get_node_attributes(G, 'label_inside')
-
-        label_pos_above = {node: (x, y + node_height / 2 + 0.4) for node, (x, y) in pos.items()}
 
         for node, (x, y) in pos.items():
             ax.text(x, y + node_height / 2 + 0.4, labels_above[node],
@@ -255,7 +243,6 @@ class CPM:
                 bbox_width = bbox.width / fig.dpi
                 bbox_height = bbox.height / fig.dpi
 
-        # Pin the legend to the bottom-right corner of the screen
         legend_x = 0.03
         legend_y = 0.98
 
