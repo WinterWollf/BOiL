@@ -1,5 +1,7 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
+matplotlib.use('TkAgg')
 
 
 class CPM:
@@ -590,4 +592,3 @@ class CPM:
 
         plt.tight_layout()
         plt.show()
-
