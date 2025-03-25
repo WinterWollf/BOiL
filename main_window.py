@@ -89,7 +89,7 @@ button_1 = Button(
 button_1.place(
     x=76.0,
     y=328.0,
-    width=219.0,
+    width=196.0,
     height=72.0
 )
 
@@ -105,7 +105,7 @@ button_2 = Button(
 button_2.place(
     x=76.0,
     y=511.0,
-    width=219.0,
+    width=196.0,
     height=72.0
 )
 
