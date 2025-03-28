@@ -2,6 +2,7 @@ from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter.font as tkFont
 from gui_paths import relative_to_fonts, relative_to_assets_2
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 window = Tk()
 window.geometry("1330x881")
@@ -173,7 +174,6 @@ button_6.place(
 
 
 
-# Function to add data to table1
 def add_to_table1():
     id_data = entry_id1.get()
     duration_data = entry_duration1.get()
@@ -184,7 +184,6 @@ def add_to_table1():
         entry_duration1.delete(0, "end")
         entry_events1.delete(0, "end")
 
-# Function to add data to table2
 def add_to_table2():
     id_data = entry_id2.get()
     duration_data = entry_duration2.get()
@@ -194,6 +193,16 @@ def add_to_table2():
         entry_id2.delete(0, "end")
         entry_duration2.delete(0, "end")
         entry_predecessors2.delete(0, "end")
+
+def remove_from_table1():
+    selected_item = table1.selection()
+    if selected_item:
+        table1.delete(selected_item)
+
+def remove_from_table2():
+    selected_item = table2.selection()
+    if selected_item:
+        table2.delete(selected_item)
 
 
 
@@ -237,11 +246,24 @@ entry_predecessors2.place(x=616, y=730, width=90)
 
 # Buttons to add data to tables
 button_add1 = Button(window, text="ADD", command=add_to_table1, font=custom_font_4)
-button_add1.place(x=340, y=729, width=70, height=40)
+button_add1.place(x=314, y=729, width=70, height=40)
 
 button_add2 = Button(window, text="ADD", command=add_to_table2, font=custom_font_4)
-button_add2.place(x=750, y=729, width=70, height=40)
+button_add2.place(x=722, y=729, width=70, height=40)
 
+
+trash_image = Image.open(relative_to_assets_2("trash.png"))
+trash_image = trash_image.resize((30, 30), Image.Resampling.LANCZOS)
+trash_icon = ImageTk.PhotoImage(trash_image)
+window.trash_icon = trash_icon
+
+
+# Buttons to remove data from tables
+button_remove1 = Button(window, image=trash_icon, command=remove_from_table1, borderwidth=0)
+button_remove1.place(x=390, y=729, width=38, height=38)
+
+button_remove2 = Button(window, image=trash_icon, command=remove_from_table2, borderwidth=0)
+button_remove2.place(x=798, y=729, width=38, height=38)
 
 window.resizable(False, False)
 window.mainloop()
