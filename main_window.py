@@ -1,17 +1,16 @@
-from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
-
-OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path("assets/frame0")
-
-def relative_to_assets(path: str) -> Path:
-    return ASSETS_PATH / Path(path)
+import tkinter.font as tkFont
+from gui_paths import relative_to_assets, relative_to_fonts
 
 
 window = Tk()
-
 window.geometry("1024x768")
 window.configure(bg = "#4076FF")
+
+
+font_path = str(relative_to_fonts("Kanit.ttf"))
+custom_font_1 = tkFont.Font(family="Kanit", size=36 * -1)
+custom_font_2 = tkFont.Font(family="Kanit", size=64 * -1)
 
 
 canvas = Canvas(
@@ -27,20 +26,20 @@ canvas = Canvas(
 canvas.place(x = 0, y = 0)
 canvas.create_text(
     76.0,
-    445.0,
+    456.0,
     anchor="nw",
-    text="Metoda pośrednika:",
+    text="Broker problem:",
     fill="#FFFFFF",
-    font=("Kanit Bold", 32 * -1)
+    font=custom_font_1
 )
 
 canvas.create_text(
     76.0,
-    273.0,
+    284.0,
     anchor="nw",
-    text="Metoda ścieżki krytycznej (CPM):",
+    text="Critical Path Method (CPM):",
     fill="#FFFFFF",
-    font=("Kanit Bold", 32 * -1)
+    font=custom_font_1
 )
 
 canvas.create_rectangle(
@@ -63,18 +62,18 @@ canvas.create_text(
     76.0,
     29.0,
     anchor="nw",
-    text="Witaj!\n\n",
+    text="Welcome!",
     fill="#FFFFFF",
-    font=("Kanit Bold", 64 * -1)
+    font=custom_font_2
 )
 
 canvas.create_text(
     76.0,
     112.0,
     anchor="nw",
-    text="Wybierz jedną z metod:",
+    text="Choose one of the methods:",
     fill="#FFFFFF",
-    font=("Kanit Bold", 36 * -1)
+    font=custom_font_1
 )
 
 button_image_1 = PhotoImage(
@@ -88,7 +87,7 @@ button_1 = Button(
 )
 button_1.place(
     x=76.0,
-    y=328.0,
+    y=339.0,
     width=196.0,
     height=72.0
 )
