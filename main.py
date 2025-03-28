@@ -1,6 +1,6 @@
 from activity import Activity, parseEventSequenceFormat, parsePredecessorformat
 from cpm import CPM
-
+from main_window import create_main_gui
 
 def main():
     # Test data #
@@ -72,14 +72,15 @@ def main():
     #     'I': Activity('I', 2, ['H']),
     # }
 
-    results = CPM(data)
-    results.calculate()
-    results.print()
-    results.printCriticalPath()
-    results.drawAON()
-    results.drawAOA()
-    results.drawGantt()
+    #results = CPM(data)
+    #results.calculate()
+    #results.print()
+    #results.printCriticalPath()
+    #results.drawAON()
+    #results.drawAOA()
+    #results.drawGantt()
 
 
 if __name__ == "__main__":
     main()
+    create_main_gui()
