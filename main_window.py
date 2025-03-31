@@ -1,12 +1,40 @@
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter.font as tkFont
 from gui_paths import relative_to_assets, relative_to_fonts
-from cpm_window import create_cpm_gui
+
+
+def align_window(window):
+    window_width = 1024
+    window_height = 768
+
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    x_coordinate = (screen_width / 2) - (window_width / 2)
+    y_coordinate = (screen_height / 2) - (window_height / 2)
+
+    window.geometry(f"{window_width}x{window_height}+{int(x_coordinate)}+{int(y_coordinate)}")
+
+
+def window_changer(window):
+    window.destroy()
+
+    new_window = Tk()
+    new_window.title("Critical Path Method (CPM)")
+    new_window.geometry("1330x881")
+    new_window.configure(bg="#4076FF")
+
+    from cpm_window import create_cpm_gui
+    create_cpm_gui(new_window)
+
 
 def create_main_gui():
     window = Tk()
+
+    window.title("Main menu")
     window.geometry("1024x768")
     window.configure(bg = "#4076FF")
+    align_window(window)
 
 
     font_path = str(relative_to_fonts("Kanit.ttf"))
@@ -83,7 +111,7 @@ def create_main_gui():
         image=button_image_1,
         borderwidth=0,
         highlightthickness=0,
-        command=lambda: create_cpm_gui(window),
+        command=lambda: window_changer(window),
         relief="flat"
     )
     button_1.place(
@@ -116,5 +144,6 @@ def create_main_gui():
         98.0,
         image=image_image_1
     )
+
     window.resizable(False, False)
     window.mainloop()
