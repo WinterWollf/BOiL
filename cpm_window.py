@@ -4,6 +4,7 @@ from gui_paths import relative_to_fonts, relative_to_assets_2
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cpm import CPM
+from tkinter import filedialog
 from activity import Activity, parseEventSequenceFormat, parsePredecessorformat
 
 
@@ -55,6 +56,73 @@ def create_cpm_gui(cpm_window):
     canvas.create_text(92.0, 107.0, anchor="nw",
                        text="Choose the table and enter data into the fields below the table:", fill="#FFFFFF",
                        font=custom_font_4)
+    
+
+    def load_data_from_table1():
+        activities = {}
+        if not table1.get_children():
+            messagebox.showwarning("Warning", "Table 1 is empty!")
+            return {}
+        for item in table1.get_children():
+            values = table1.item(item, 'values')
+            id_val, duration, events = values
+            if not all([id_val, duration, events]):
+                raise ValueError(f"Empty field detected in activity {id_val}")
+            if not duration.isdigit():
+                raise ValueError(f"Duration must be a number in activity {id_val}")
+            event_parts = events.split('-')
+            if len(event_parts) != 2:
+                raise ValueError(
+                    f"Events for activity {id_val} must be in 'start-end' format (e.g., '1-2') with numbers, not '{events}'")
+            if not all(part.strip().isdigit() for part in event_parts):
+                raise ValueError(
+                    f"Events for activity {id_val} must contain numbers in 'start-end' format (e.g., '1-2'), not '{events}'")
+            activities[id_val] = {
+                'duration': int(duration),
+                'events': events
+            }
+        return activities
+    
+    def load_data_from_table2():
+        activities = {}
+        if not table2.get_children():
+            messagebox.showwarning("Warning", "Table 2 is empty!")
+            return {}
+        for item in table2.get_children():
+            values = table2.item(item, 'values')
+            id_val, duration, predecessors = values
+            if not all([id_val, duration, predecessors]):
+                raise ValueError(f"Empty field detected in activity {id_val}")
+            if not duration.isdigit():
+                raise ValueError(f"Duration must be a number in activity {id_val}")
+            pred_list = predecessors.split(',') if predecessors != '-' else []
+            activities[id_val] = {
+                'duration': int(duration),
+                'predecessors': pred_list
+            }
+
+        return activities
+    
+
+    def create_cpm_from_tables():
+        if active_table == "table1":
+                loaded_data = load_data_from_table1()
+                if len(loaded_data) == 0:
+                    return False
+                activities = parseEventSequenceFormat(loaded_data)
+        else:  # table2
+            loaded_data = load_data_from_table2()
+            if len(loaded_data) == 0:
+                return False  
+            activities = parsePredecessorformat(loaded_data)
+
+        cpm = CPM(activities)
+        cpm.calculate()
+        cpm.critical_path = cpm.criticalPath()
+
+        global results
+        results = cpm
+
 
     def calculate_cpm():
         nonlocal active_table
@@ -64,59 +132,15 @@ def create_cpm_gui(cpm_window):
 
         activities = {}
         try:
-            if active_table == "table1":
-                if not table1.get_children():
-                    messagebox.showwarning("Warning", "Table 1 is empty!")
-                    return False
-                for item in table1.get_children():
-                    values = table1.item(item, 'values')
-                    id_val, duration, events = values
-                    if not all([id_val, duration, events]):
-                        raise ValueError(f"Empty field detected in activity {id_val}")
-                    if not duration.isdigit():
-                        raise ValueError(f"Duration must be a number in activity {id_val}")
-                    event_parts = events.split('-')
-                    if len(event_parts) != 2:
-                        raise ValueError(
-                            f"Events for activity {id_val} must be in 'start-end' format (e.g., '1-2') with numbers, not '{events}'")
-                    if not all(part.strip().isdigit() for part in event_parts):
-                        raise ValueError(
-                            f"Events for activity {id_val} must contain numbers in 'start-end' format (e.g., '1-2'), not '{events}'")
-                    activities[id_val] = {
-                        'duration': int(duration),
-                        'events': events
-                    }
-                activities = parseEventSequenceFormat(activities)
-            else:  # table2
-                if not table2.get_children():
-                    messagebox.showwarning("Warning", "Table 2 is empty!")
-                    return False
-                for item in table2.get_children():
-                    values = table2.item(item, 'values')
-                    id_val, duration, predecessors = values
-                    if not all([id_val, duration, predecessors]):
-                        raise ValueError(f"Empty field detected in activity {id_val}")
-                    if not duration.isdigit():
-                        raise ValueError(f"Duration must be a number in activity {id_val}")
-                    pred_list = predecessors.split(',') if predecessors != '-' else []
-                    activities[id_val] = {
-                        'duration': int(duration),
-                        'predecessors': pred_list
-                    }
-                activities = parsePredecessorformat(activities)
-
-            cpm = CPM(activities)
-            cpm.calculate()
-            cpm.critical_path = cpm.criticalPath()
+            create_cpm_from_tables()
 
             global results
-            results = cpm
 
             result_text = "CPM Results:\n"
-            for name, act in cpm.activities.items():
+            for name, act in results.activities.items():
                 result_text += (f"Activity {name}: ES={act.ES}, EF={act.EF}, "
                                 f"LS={act.LS}, LF={act.LF}, Reserve={act.reserve}\n")
-            result_text += "\nCritical Path: " + " -> ".join(cpm.critical_path)
+            result_text += "\nCritical Path: " + " -> ".join(results.critical_path)
             messagebox.showinfo("CPM Results", result_text)
             return True
 
@@ -201,6 +225,17 @@ def create_cpm_gui(cpm_window):
                 entry_events1.config(state="normal")
                 button_add1.config(state="normal")
 
+    def export_data():
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv", 
+            filetypes=[("Csv files", "*.csv"), ("All files", "*.*")]
+        )
+        if file_path:
+            create_cpm_from_tables()
+
+            global results
+            results.save_to_csv(file_path)
+
     button_image_1 = PhotoImage(file=relative_to_assets_2("button_1.png"))
     button_1 = Button(
         cpm_window, image=button_image_1, borderwidth=0, highlightthickness=0,
@@ -235,7 +270,7 @@ def create_cpm_gui(cpm_window):
 
     button_image_5 = PhotoImage(file=relative_to_assets_2("button_5.png"))
     button_5 = Button(cpm_window, image=button_image_5, borderwidth=0, highlightthickness=0,
-                      command=lambda: print("button_5 clicked"), relief="flat")
+                      command=lambda: export_data(), relief="flat")
     button_5.place(x=1105.0, y=601.0, width=138.0, height=48.0)
 
     button_image_6 = PhotoImage(file=relative_to_assets_2("button_6.png"))
