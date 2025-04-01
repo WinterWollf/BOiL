@@ -1,11 +1,11 @@
-from tkinter import Tk, Toplevel, Canvas, Entry, Text, Button, PhotoImage
+from tkinter import Tk, Toplevel, Canvas, Entry, Text, Button, PhotoImage, Label
 import tkinter.font as tkFont
 from gui_paths import relative_to_fonts, relative_to_assets_2
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cpm import CPM
 from tkinter import filedialog
-from activity import Activity, parseEventSequenceFormat, parsePredecessorformat
+from activity import Activity, parseEventSequenceFormat, parsePredecessorformat, reverseEventSequenceFormat
 
 
 def main_window(window):
@@ -129,8 +129,7 @@ def create_cpm_gui(cpm_window):
         if not active_table:
             messagebox.showwarning("Warning", "Please enter data into one of the tables first!")
             return False
-
-        activities = {}
+        
         try:
             create_cpm_from_tables()
 
@@ -234,7 +233,82 @@ def create_cpm_gui(cpm_window):
             create_cpm_from_tables()
 
             global results
+
             results.save_to_csv(file_path)
+
+    def ask_load_as_predecessor():
+        dialog = Toplevel()
+        dialog.title("Choose format")
+        dialog.geometry("300x150")
+
+        # Center the dialog on the screen
+        dialog.update_idletasks()
+        root_x = cpm_window.winfo_screenwidth() // 2 - 150
+        root_y = cpm_window.winfo_screenheight() // 2 - 75
+        dialog.geometry(f"300x150+{root_x}+{root_y}")
+        
+        Label(dialog, text="What format to load the data in?").pack(pady=10)
+
+        use_predecessor = True
+        
+        def on_event():
+            nonlocal use_predecessor
+            use_predecessor = False
+            dialog.destroy()
+        
+        def on_pred():
+            nonlocal use_predecessor
+            use_predecessor = True
+            dialog.destroy()
+        
+        Button(dialog, text="Event Sequence", command=on_event).pack(side="left", padx=20, pady=10)
+        Button(dialog, text="Predecessor", command=on_pred).pack(side="right", padx=20, pady=10)
+        
+        dialog.transient(cpm_window)
+        dialog.grab_set()
+        cpm_window.wait_window(dialog)
+
+        return use_predecessor
+
+    def clear_tables():
+        # clear tables
+        nonlocal active_table
+        active_table = ""
+        for c in table1.get_children():
+            table1.delete(c)
+        for c in table2.get_children():
+            table2.delete(c)
+
+    def import_data():
+        global results
+        results = CPM()
+
+        file_path = filedialog.askopenfilename(
+            defaultextension=".csv", 
+            filetypes=[("Csv files", "*.csv"), ("All files", "*.*")]
+        )
+
+        results.read_from_csv(file_path)
+
+        use_predecessor = ask_load_as_predecessor()
+
+        clear_tables()
+
+        nonlocal active_table
+
+        if use_predecessor:
+            # load into table2
+            active_table = "table2"
+            for activity in results.activities.values():
+                pred = ",".join(activity.predecessors) if len(activity.predecessors) > 0 else "-"
+                table2.insert("", "end", values=(activity.name, activity.duration, pred))
+        else:
+            active_table = "table1"
+            data = reverseEventSequenceFormat(results.activities)
+            for name, data in data.items():
+                table1.insert("", "end", values=(name, data["duration"], data["events"]))
+
+    
 
     button_image_1 = PhotoImage(file=relative_to_assets_2("button_1.png"))
     button_1 = Button(
@@ -265,7 +339,7 @@ def create_cpm_gui(cpm_window):
 
     button_image_4 = PhotoImage(file=relative_to_assets_2("button_4.png"))
     button_4 = Button(cpm_window, image=button_image_4, borderwidth=0, highlightthickness=0,
-                      command=lambda: print("button_4 clicked"), relief="flat")
+                      command=lambda: import_data(), relief="flat")
     button_4.place(x=959.0, y=601.0, width=141.0, height=48.0)
 
     button_image_5 = PhotoImage(file=relative_to_assets_2("button_5.png"))

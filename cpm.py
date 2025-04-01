@@ -7,7 +7,7 @@ matplotlib.use('TkAgg')
 
 
 class CPM:
-    def __init__(self, activities):
+    def __init__(self, activities=None):
         self.activities = activities if activities else {}
         self.critical_path = []
 
@@ -78,7 +78,7 @@ class CPM:
         :param filename: Name of the output CSV file
         """
         with open(filename, mode='w', newline='') as file:
-            writer = csv.writer(file)
+            writer = csv.writer(file, delimiter='\t')
             
             # Write header
             writer.writerow(["Name", "Duration", "Predecessors", "ES", "EF", "LS", "LF", "Reserve"])
@@ -105,7 +105,7 @@ class CPM:
         """
         activities = {}
         with open(filename, mode='r', newline='') as file:
-            reader = csv.reader(file)
+            reader = csv.reader(file, delimiter='\t')
             next(reader)  # Skip header
             for row in reader:
                 name, duration, predecessors, ES, EF, LS, LF, reserve = row
