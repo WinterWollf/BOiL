@@ -1,11 +1,13 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
+import csv
+from activity import Activity
 matplotlib.use('TkAgg')
 
 
 class CPM:
-    def __init__(self, activities):
+    def __init__(self, activities=None):
         self.activities = activities if activities else {}
         self.critical_path = []
 
@@ -67,6 +69,57 @@ class CPM:
 
         self.critical_path = self.criticalPath()
         return self.activities
+    
+    def save_to_csv(self, filename):
+        """
+        Saves a dictionary of Activity objects to a CSV file.
+        
+        :param activities: Dictionary of activities (key: activity name, value: Activity object)
+        :param filename: Name of the output CSV file
+        """
+        with open(filename, mode='w', newline='') as file:
+            writer = csv.writer(file, delimiter='\t')
+            
+            # Write header
+            writer.writerow(["Name", "Duration", "Predecessors", "ES", "EF", "LS", "LF", "Reserve"])
+            
+            # Write activity data
+            for activity in self.activities.values():
+                writer.writerow([
+                    activity.name,
+                    activity.duration,
+                    ','.join(activity.predecessors),  # Convert list to comma-separated string
+                    activity.ES,
+                    activity.EF,
+                    activity.LS,
+                    activity.LF,
+                    activity.reserve
+                ])
+
+    def read_from_csv(self, filename):
+        """
+        Reads activities from a CSV file and returns a dictionary of Activity objects.
+        
+        :param filename: Name of the input CSV file
+        :return: Dictionary of Activity objects (key: activity name, value: Activity object)
+        """
+        activities = {}
+        with open(filename, mode='r', newline='') as file:
+            reader = csv.reader(file, delimiter='\t')
+            next(reader)  # Skip header
+            for row in reader:
+                name, duration, predecessors, ES, EF, LS, LF, reserve = row
+                activities[name] = Activity(
+                    name,
+                    int(duration),
+                    predecessors.split(',') if predecessors else []
+                )
+                activities[name].ES = int(ES)
+                activities[name].EF = int(EF)
+                activities[name].LS = int(LS)
+                activities[name].LF = int(LF)
+                activities[name].reserve = int(reserve)
+        self.activities = activities
 
     def criticalPath(self):
         return [n for n, a in self.activities.items() if a.reserve == 0]
