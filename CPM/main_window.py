@@ -1,6 +1,6 @@
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter.font as tkFont
-from gui_paths import relative_to_assets, relative_to_fonts
+from gui_paths import relative_to_assets, relative_to_fonts, load_custom_font
 
 
 def align_window(window):
@@ -36,10 +36,9 @@ def create_main_gui():
     window.configure(bg = "#4076FF")
     align_window(window)
 
-
     font_path = str(relative_to_fonts("Kanit.ttf"))
-    custom_font_1 = tkFont.Font(family="Kanit", size=36 * -1)
-    custom_font_2 = tkFont.Font(family="Kanit", size=64 * -1)
+    custom_font_1 = load_custom_font(font_path, "Kanit", 36*-1)
+    custom_font_2 = load_custom_font(font_path, "Kanit", 64*-1)
 
 
     canvas = Canvas(

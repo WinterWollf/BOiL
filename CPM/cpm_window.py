@@ -1,6 +1,6 @@
 from tkinter import Tk, Toplevel, Canvas, Entry, Text, Button, PhotoImage, Label
 import tkinter.font as tkFont
-from gui_paths import relative_to_fonts, relative_to_assets_2
+from gui_paths import relative_to_fonts, relative_to_assets_2, load_custom_font
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cpm import CPM
@@ -29,10 +29,8 @@ def create_cpm_gui(cpm_window):
     align_window(cpm_window)
 
     font_path = str(relative_to_fonts("Kanit.ttf"))
-    custom_font_1 = tkFont.Font(family="Kanit", size=36 * -1)
-    custom_font_2 = tkFont.Font(family="Kanit", size=64 * -1)
-    custom_font_3 = tkFont.Font(family="Kanit", size=48 * -1)
-    custom_font_4 = tkFont.Font(family="Kanit", size=20 * -1)
+    custom_font_3 = load_custom_font(font_path, "Kanit", 48*-1)
+    custom_font_4 = load_custom_font(font_path, "Kanit", 20*-1)
 
     active_table = None
 
