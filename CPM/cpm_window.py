@@ -4,6 +4,7 @@ from gui_paths import relative_to_fonts, relative_to_assets_2
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from cpm import CPM
+from table import create_results_table
 from tkinter import filedialog
 from activity import Activity, parseEventSequenceFormat, parsePredecessorformat, reverseEventSequenceFormat
 
@@ -161,6 +162,10 @@ def create_cpm_gui(cpm_window):
     def draw_gantt():
         if calculate_cpm() and 'results' in globals():
             results.drawGantt()
+
+    def draw_table():
+        if calculate_cpm() and 'results' in globals():
+            create_results_table(cpm_window, results)
 
     def add_to_table1():
         nonlocal active_table
@@ -333,6 +338,14 @@ def create_cpm_gui(cpm_window):
         relief="flat"
     )
     button_3.place(x=998.0, y=411.0, width=204.0, height=57.0)
+
+    button_image_7 = PhotoImage(file=relative_to_assets_2("spreadsheet.png"))
+    button_7 = Button(
+        cpm_window, image=button_image_7, borderwidth=0, highlightthickness=0,
+        command=draw_table,
+        relief="flat"
+    )
+    button_7.place(x=998.0, y=485.0, width=204.0, height=57.0)
 
     canvas.create_text(957.0, 557.0, anchor="nw", text="Import or export data (CSV file)", fill="#FFFFFF",
                        font=custom_font_4)
