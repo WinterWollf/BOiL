@@ -625,7 +625,7 @@ class CPM:
 
         from matplotlib.patches import Patch
         legend_elements = [
-            # Patch(facecolor='blue', edgecolor='black', label='Usual activity'),
+            # Patch(facecolor='blue', edgecolor='black', label='Usual activity'),   
             Patch(facecolor='red', edgecolor='black', label='Critical path')
         ]
         ax.legend(handles=legend_elements, loc='upper right')
