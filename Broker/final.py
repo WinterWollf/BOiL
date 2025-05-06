@@ -138,7 +138,7 @@ class IntermediaryProblemApp:
         self.results_frame = ttk.LabelFrame(self.root, text="Results")
         self.results_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 
-        self.results_text = tk.Text(self.results_frame, height=20, width=80)
+        self.results_text = tk.Text(self.results_frame, height=15, width=60)
         self.results_text.grid(row=0, column=0, padx=5, pady=5)
         self.results_text.config(state='disabled')
 
