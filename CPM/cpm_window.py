@@ -1,17 +1,17 @@
 from tkinter import Tk, Toplevel, Canvas, Entry, Text, Button, PhotoImage, Label
 import tkinter.font as tkFont
-from gui_paths import relative_to_fonts, relative_to_assets_2, load_custom_font
+from CPM.gui_paths import relative_to_fonts, relative_to_assets_2, load_custom_font
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
-from cpm import CPM
-from table import create_results_table
+from CPM.cpm import CPM
+from CPM.table import create_results_table
 from tkinter import filedialog
-from activity import Activity, parseEventSequenceFormat, parsePredecessorformat, reverseEventSequenceFormat
+from CPM.activity import Activity, parseEventSequenceFormat, parsePredecessorformat, reverseEventSequenceFormat
 
 
 def main_window(window):
     window.destroy()
-    from main_window import create_main_gui
+    from CPM.main_window import create_main_gui
     create_main_gui()
 
 

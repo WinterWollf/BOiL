@@ -2,7 +2,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
 import csv
-from activity import Activity
+from CPM.activity import Activity
 matplotlib.use('TkAgg')
 
 
