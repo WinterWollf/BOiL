@@ -32,7 +32,7 @@ def window_changer_Broker(window):
     window.destroy()
 
     new_window = Tk()
-    new_window.title("Brocker Problem")
+    new_window.title("Broker Problem")
 
     from Broker import gui
     gui.IntermediaryProblemApp(new_window)
