@@ -1,6 +1,6 @@
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter.font as tkFont
-from gui_paths import relative_to_assets, relative_to_fonts, load_custom_font
+from CPM.gui_paths import relative_to_assets, relative_to_fonts, load_custom_font
 
 
 def align_window(window):
@@ -16,7 +16,7 @@ def align_window(window):
     window.geometry(f"{window_width}x{window_height}+{int(x_coordinate)}+{int(y_coordinate)}")
 
 
-def window_changer(window):
+def window_changer_CPM(window):
     window.destroy()
 
     new_window = Tk()
@@ -24,8 +24,23 @@ def window_changer(window):
     new_window.geometry("1330x881")
     new_window.configure(bg="#4076FF")
 
-    from cpm_window import create_cpm_gui
+    from CPM.cpm_window import create_cpm_gui
     create_cpm_gui(new_window)
+
+
+def window_changer_Broker(window):
+    window.destroy()
+
+    new_window = Tk()
+    new_window.title("Broker Problem")
+
+    from Broker import gui
+    gui.IntermediaryProblemApp(new_window)
+    # new_window.geometry("1330x881")
+    # new_window.configure(bg="#4076FF")
+    # new_window.resizable(False, False)
+    # new_window.update_idletasks()
+    # new_window.update()
 
 
 def create_main_gui():
@@ -110,7 +125,7 @@ def create_main_gui():
         image=button_image_1,
         borderwidth=0,
         highlightthickness=0,
-        command=lambda: window_changer(window),
+        command=lambda: window_changer_CPM(window),
         relief="flat"
     )
     button_1.place(
@@ -126,7 +141,7 @@ def create_main_gui():
         image=button_image_2,
         borderwidth=0,
         highlightthickness=0,
-        command=lambda: print("button_2 clicked"),
+        command=lambda: window_changer_Broker(window),
         relief="flat"
     )
     button_2.place(

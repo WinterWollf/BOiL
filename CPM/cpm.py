@@ -2,7 +2,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import networkx as nx
 import csv
-from activity import Activity
+from CPM.activity import Activity
 matplotlib.use('TkAgg')
 
 
@@ -625,7 +625,7 @@ class CPM:
 
         from matplotlib.patches import Patch
         legend_elements = [
-            # Patch(facecolor='blue', edgecolor='black', label='Usual activity'),
+            # Patch(facecolor='blue', edgecolor='black', label='Usual activity'),   
             Patch(facecolor='red', edgecolor='black', label='Critical path')
         ]
         ax.legend(handles=legend_elements, loc='upper right')
