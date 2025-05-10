@@ -61,11 +61,13 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
         sell_price = np.append(sell_price, 0)
         unit_transport_costs = np.pad(unit_transport_costs, ((0,1), (0,1)), constant_values=0)
 
-        detailed_revenue[-1, :] += -1_000_000_000 * seller_contracts
-        unit_transport_costs[-1, :] += 1_000_000_000 * seller_contracts
+        block_val = np.max(unit_transport_costs) * 100000
 
-        detailed_revenue[:, -1] += -1_000_000_000 * supplier_contracts
-        unit_transport_costs[:, -1] += 1_000_000_000 * supplier_contracts
+        detailed_revenue[-1, :] += -block_val * seller_contracts
+        unit_transport_costs[-1, :] += block_val * seller_contracts
+
+        detailed_revenue[:, -1] += -block_val * supplier_contracts
+        unit_transport_costs[:, -1] += block_val * supplier_contracts
 
 
     # --- Pierwsza propozycja planu dostaw ---
@@ -163,7 +165,9 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
     row_labels = [f"D{i+1}" if i < original_rows else "DF" for i in range(detailed_revenue.shape[0])]
     col_labels = [f"O{j+1}" if j < original_cols else "OF" for j in range(detailed_revenue.shape[1])]
     plan_df = pd.DataFrame(optimal_plan, index=row_labels, columns=col_labels).fillna("-").replace(0, "-")
-    z_df = pd.DataFrame(detailed_revenue, index=row_labels, columns=col_labels)
+    z_df = pd.DataFrame(detailed_revenue, index=row_labels, columns=col_labels).astype(object)
+    z_df.loc[row_labels[-1], seller_contracts == 1] = "-M"
+    z_df.loc[supplier_contracts == 1, col_labels[-1]] = "-M"
 
     delta_readable = [f"{row_labels[i]} -> {col_labels[j]} Δ = {delta:.2f}" for i, j, delta in delta_results]
 
