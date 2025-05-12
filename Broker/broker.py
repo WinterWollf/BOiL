@@ -68,7 +68,7 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
 
         detailed_revenue[:, -1] += -block_val * supplier_contracts
         unit_transport_costs[:, -1] += block_val * supplier_contracts
-
+        
 
     # --- Pierwsza propozycja planu dostaw ---
     # Kopia zysków, w celu poprawnego sortowania
