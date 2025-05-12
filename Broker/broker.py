@@ -45,10 +45,10 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
     detailed_revenue = sell_price - purchase_cost[:, np.newaxis] - unit_transport_costs
     original_rows, original_cols = detailed_revenue.shape
 
-    seller_contracts = np.append(seller_contracts, 0)
-    supplier_contracts = np.append(supplier_contracts, 0)
-
     if supply.sum() != demand.sum():
+        seller_contracts = np.append(seller_contracts, 0)
+        supplier_contracts = np.append(supplier_contracts, 0)
+        
         total_supply = supply.sum()
         total_demand = demand.sum()
         new_z = np.zeros((detailed_revenue.shape[0] + 1, detailed_revenue.shape[1] + 1))
