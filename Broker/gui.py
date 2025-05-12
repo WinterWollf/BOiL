@@ -103,6 +103,12 @@ class IntermediaryProblemApp:
                 row_entries.append(entry)
             self.transport_entries.append(row_entries)
 
+        ttk.Label(self.tables_frame, text="Contract Options:").grid(row=10+self.suppliers, column=0, padx=5, pady=5)
+        self.contract_var = tk.StringVar(value="None")
+        contract_options = ["None"] + [f"D{i+1}" for i in range(self.suppliers)] + [f"O{j+1}" for j in range(self.receivers)]
+        self.contract_menu = ttk.OptionMenu(self.tables_frame, self.contract_var, *contract_options)
+        self.contract_menu.grid(row=10+self.suppliers, column=1, columnspan=self.receivers, padx=5, pady=5)
+
     def get_inputs(self):
         try:
             supply = np.array([float(entry.get()) for entry in self.supply_entries])
@@ -117,7 +123,19 @@ class IntermediaryProblemApp:
                 raise ValueError("Costs and prices must be non-negative.")
             if any(c < 0 for row in transport_costs for c in row):
                 raise ValueError("Transport costs must be non-negative.")
-            return supply, demand, purchase_cost, sale_price, transport_costs
+
+            selected_contract = self.contract_var.get()
+            supplier_contracts = np.zeros(len(supply), dtype=int)
+            receiver_contracts = np.zeros(len(demand), dtype=int)
+
+            if selected_contract.startswith("D"):
+                supplier_index = int(selected_contract.split("D")[1]) - 1
+                supplier_contracts[supplier_index] = 1
+            elif selected_contract.startswith("O"):
+                receiver_index = int(selected_contract.split("O")[1]) - 1
+                receiver_contracts[receiver_index] = 1
+
+            return supply, demand, purchase_cost, sale_price, transport_costs, supplier_contracts, receiver_contracts
         except ValueError as e:
             messagebox.showerror("Input Error", str(e))
             return None
@@ -126,9 +144,9 @@ class IntermediaryProblemApp:
         inputs = self.get_inputs()
         if inputs is None:
             return
-        supply, demand, purchase_cost, sale_price, transport_costs = inputs
-        plan_df, total_profit, z_df, delta_list, revenue, purchase_cost_sum, transport_cost_sum = ZZT(
-            supply, demand, purchase_cost, sale_price, transport_costs)
+        supply, demand, purchase_cost, sale_price, transport_costs, supplier_contracts, receiver_contracts = inputs
+        plan_df, total_profit, z_df, delta_list, revenue, purchase_cost_sum, transport_cost_sum, has_alt_plans = ZZT(
+            supply, demand, purchase_cost, sale_price, transport_costs, supplier_contracts, receiver_contracts)
 
         z_text = z_df.to_string()
         delta_text = "\n".join(delta_list)
@@ -140,7 +158,8 @@ class IntermediaryProblemApp:
             f"PC: {revenue:.2f}\n"
             f"KZ: {purchase_cost_sum:.2f}\n"
             f"KT: {transport_cost_sum:.2f}\n"
-            f"ZC: {total_profit:.2f}"
+            f"ZC: {total_profit:.2f}\n\n",
+            f"Czy istnieją alternatywne plany dostaw: {'Tak' if has_alt_plans else 'Nie'}"
         )
         self.update_results(output)
 
