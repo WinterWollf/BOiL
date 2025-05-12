@@ -134,10 +134,14 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
                 if np.isnan(optimal_plan[i, j]):
                     optimal_plan[i, j] = 0
                 optimal_plan[i, j] -= min_qty
+                if optimal_plan[i, j] == 0:
+                    optimal_plan[i, j] = np.nan
             for i, j in cycle[::2]:
                 if np.isnan(optimal_plan[i, j]):
                     optimal_plan[i, j] = 0
                 optimal_plan[i, j] += min_qty
+                if optimal_plan[i, j] == 0:
+                    optimal_plan[i, j] = np.nan
         else:
             break
 
