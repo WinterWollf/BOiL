@@ -132,6 +132,12 @@ class IntermediaryProblemApp:
         self.contract_menu.grid(row=row_offset, column=1, columnspan=max(self.receivers, 1), padx=5, pady=5)
 
 
+        ttk.Label(self.tables_frame, text="Contract Options:").grid(row=10+self.suppliers, column=0, padx=5, pady=5)
+        self.contract_var = tk.StringVar(value="None")
+        contract_options = ["None"] + [f"D{i+1}" for i in range(self.suppliers)] + [f"O{j+1}" for j in range(self.receivers)]
+        self.contract_menu = ttk.OptionMenu(self.tables_frame, self.contract_var, *contract_options)
+        self.contract_menu.grid(row=10+self.suppliers, column=1, columnspan=self.receivers, padx=5, pady=5)
+
     def get_inputs(self):
         try:
             supply = np.array([float(entry.get()) for entry in self.supply_entries])

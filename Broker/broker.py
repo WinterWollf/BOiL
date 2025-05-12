@@ -45,10 +45,10 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
     detailed_revenue = sell_price - purchase_cost[:, np.newaxis] - unit_transport_costs
     original_rows, original_cols = detailed_revenue.shape
 
-    seller_contracts = np.append(seller_contracts, 0)
-    supplier_contracts = np.append(supplier_contracts, 0)
-
     if supply.sum() != demand.sum():
+        seller_contracts = np.append(seller_contracts, 0)
+        supplier_contracts = np.append(supplier_contracts, 0)
+        
         total_supply = supply.sum()
         total_demand = demand.sum()
         new_z = np.zeros((detailed_revenue.shape[0] + 1, detailed_revenue.shape[1] + 1))
@@ -68,7 +68,7 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
 
         detailed_revenue[:, -1] += -block_val * supplier_contracts
         unit_transport_costs[:, -1] += block_val * supplier_contracts
-
+        
 
     # --- Pierwsza propozycja planu dostaw ---
     # Kopia zysków, w celu poprawnego sortowania
@@ -134,10 +134,14 @@ def ZZT(supply, demand, purchase_cost, sell_price, unit_transport_costs, supplie
                 if np.isnan(optimal_plan[i, j]):
                     optimal_plan[i, j] = 0
                 optimal_plan[i, j] -= min_qty
+                if optimal_plan[i, j] == 0:
+                    optimal_plan[i, j] = np.nan
             for i, j in cycle[::2]:
                 if np.isnan(optimal_plan[i, j]):
                     optimal_plan[i, j] = 0
                 optimal_plan[i, j] += min_qty
+                if optimal_plan[i, j] == 0:
+                    optimal_plan[i, j] = np.nan
         else:
             break
 
