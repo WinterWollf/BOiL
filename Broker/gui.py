@@ -3,46 +3,106 @@ import numpy as np
 import tkinter as tk
 from Broker.broker import ZZT
 import pandas as pd
-from tkinter.filedialog import asksaveasfilename
+from tkinter.filedialog import asksaveasfilename, askopenfilename
 
 
 class IntermediaryProblemApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Broker Problem Solver")
+        self.root.geometry("1000x700")
+        self.root.minsize(1024, 768)
+
+        self.main_color = "#4076FF"
+        self.text_color = "#000000"
+        self.white = "#ffffff"
+
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.root.configure(bg=self.main_color)
+
+        self.style.configure("TFrame", background=self.main_color)
+        self.style.configure("TLabel", background=self.main_color, foreground=self.text_color)
+        self.style.configure("TLabelframe", background=self.main_color)
+        self.style.configure("TLabelframe.Label", background=self.main_color, foreground="white", font=("Arial", 10, "bold"))
+
+        self.style.configure("TEntry", fieldbackground=self.white, background=self.white)
+        self.style.configure("Treeview", background=self.white, fieldbackground=self.white, foreground="black")
+
+        self.style.configure("Accent.TButton",
+                             background=self.main_color,
+                             foreground="white",
+                             font=("Arial", 10, "bold"))
+        self.style.map("Accent.TButton",
+                       background=[("active", "#3057c7")],
+                       foreground=[("disabled", "#cccccc")])
+
         self.suppliers = 2
         self.receivers = 3
+
         self.create_widgets()
 
     def create_widgets(self):
-        input_frame = ttk.LabelFrame(self.root, text="Input Parameters")
-        input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        main_frame = ttk.Frame(self.root)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(0, weight=1)
 
-        ttk.Label(input_frame, text="Number of Suppliers:").grid(row=0, column=0, padx=5, pady=5)
-        self.suppliers_entry = ttk.Entry(input_frame, width=5)
+        # Left
+        left_frame = ttk.Frame(main_frame)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        left_frame.columnconfigure(0, weight=1)
+
+        input_frame = ttk.LabelFrame(left_frame, text="Input Parameters")
+        input_frame.pack(fill="x", pady=(0, 10))
+
+        input_inner = tk.Frame(input_frame, bg=self.main_color)
+        input_inner.pack(fill="both", expand=True)
+
+        ttk.Label(input_inner, text="Number of Suppliers:", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.suppliers_entry = ttk.Entry(input_inner, width=5)
         self.suppliers_entry.insert(0, "2")
         self.suppliers_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(input_frame, text="Number of Receivers:").grid(row=1, column=0, padx=5, pady=5)
-        self.receivers_entry = ttk.Entry(input_frame, width=5)
+        ttk.Label(input_inner, text="Number of Receivers:", font=("Arial", 10, "bold")).grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.receivers_entry = ttk.Entry(input_inner, width=5)
         self.receivers_entry.insert(0, "3")
         self.receivers_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Button(input_frame, text="Update Table", command=self.update_input_tables).grid(row=2, column=0, columnspan=2, pady=10)
-        ttk.Button(input_frame, text="Load from Excel", command=self.load_from_excel).grid(row=3, column=0, columnspan=2, pady=10)
+        ttk.Button(input_inner, text="Update Table", style="Accent.TButton", command=self.update_input_tables).grid(row=2, column=0, columnspan=2, pady=10)
+        ttk.Button(input_inner, text="Load from Excel", style="Accent.TButton", command=self.load_from_excel).grid(row=3, column=0, columnspan=2, pady=10)
 
-        self.tables_frame = ttk.LabelFrame(self.root, text="Input Data")
-        self.tables_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        self.tables_frame = ttk.LabelFrame(left_frame, text="Input Data")
+        self.tables_frame.pack(fill="both", expand=True)
 
-        self.results_frame = ttk.LabelFrame(self.root, text="Results")
-        self.results_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        self.tables_inner = tk.Frame(self.tables_frame, bg=self.white)
+        self.tables_inner.pack(fill="both", expand=True)
 
-        self.results_text = tk.Text(self.results_frame, height=15, width=60)
-        self.results_text.grid(row=0, column=0, padx=5, pady=5)
-        self.results_text.config(state='disabled')
+        # Right
+        right_frame = ttk.Frame(main_frame)
+        right_frame.grid(row=0, column=1, sticky="nsew")
+        right_frame.columnconfigure(0, weight=1)
+        right_frame.rowconfigure(0, weight=1)
 
-        ttk.Button(self.root, text="Solve", command=self.solve_problem).grid(row=3, column=0, pady=10)
-        ttk.Button(self.root, text="Save to Excel", command=self.save_to_excel).grid(row=4, column=0, pady=10)
+        self.results_frame = ttk.LabelFrame(right_frame, text="Results")
+        self.results_frame.grid(row=0, column=0, sticky="nsew")
+        self.results_frame.rowconfigure(0, weight=1)
+        self.results_frame.columnconfigure(0, weight=1)
+
+        self.results_text = tk.Text(self.results_frame, height=15, width=80, font=("Courier", 10),
+                                    bg=self.white, fg=self.text_color)
+        self.results_text.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        scrollbar = ttk.Scrollbar(self.results_frame, command=self.results_text.yview)
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        self.results_text.config(yscrollcommand=scrollbar.set, state='disabled')
+
+        button_frame = ttk.Frame(right_frame)
+        button_frame.grid(row=1, column=0, pady=10)
+
+        ttk.Button(button_frame, text="Solve", style="Accent.TButton", command=self.solve_problem).grid(row=0, column=0, padx=5)
+        ttk.Button(button_frame, text="Save to Excel", style="Accent.TButton", command=self.save_to_excel).grid(row=0, column=1, padx=5)
 
         self.update_input_tables()
 
@@ -62,7 +122,7 @@ class IntermediaryProblemApp:
         row_offset = 0
 
         # Supply
-        ttk.Label(self.tables_frame, text="Supply:").grid(row=row_offset, column=0, padx=5, pady=5)
+        ttk.Label(self.tables_frame, text="Supply:", style="Header.TLabel", font=("Arial", 10, "bold")).grid(row=row_offset, column=0, padx=5, pady=5)
         self.supply_entries = []
         for i in range(self.suppliers):
             ttk.Label(self.tables_frame, text=f"O{i+1}").grid(row=row_offset, column=i+1, padx=5, pady=5)
@@ -72,8 +132,11 @@ class IntermediaryProblemApp:
             self.supply_entries.append(entry)
         row_offset += 2
 
+        ttk.Separator(self.tables_frame, orient='horizontal').grid(row=row_offset, column=0, columnspan=self.suppliers + 2, sticky="ew", pady=10)
+        row_offset += 1
+
         # Purchase Costs
-        ttk.Label(self.tables_frame, text="Purchase Costs:").grid(row=row_offset, column=0, padx=5, pady=5)
+        ttk.Label(self.tables_frame, text="Purchase Costs:", style="Header.TLabel", font=("Arial", 10, "bold")).grid(row=row_offset, column=0, padx=5, pady=5)
         self.purchase_entries = []
         for i in range(self.suppliers):
             entry = ttk.Entry(self.tables_frame, width=5)
@@ -82,8 +145,11 @@ class IntermediaryProblemApp:
             self.purchase_entries.append(entry)
         row_offset += 2
 
+        ttk.Separator(self.tables_frame, orient='horizontal').grid(row=row_offset, column=0, columnspan=self.suppliers + 2, sticky="ew", pady=10)
+        row_offset += 1
+
         # Demand
-        ttk.Label(self.tables_frame, text="Demand:").grid(row=row_offset, column=0, padx=5, pady=5)
+        ttk.Label(self.tables_frame, text="Demand:", style="Header.TLabel", font=("Arial", 10, "bold")).grid(row=row_offset, column=0, padx=5, pady=5)
         self.demand_entries = []
         for j in range(self.receivers):
             ttk.Label(self.tables_frame, text=f"D{j+1}").grid(row=row_offset, column=j+1, padx=5, pady=5)
@@ -93,8 +159,11 @@ class IntermediaryProblemApp:
             self.demand_entries.append(entry)
         row_offset += 2
 
+        ttk.Separator(self.tables_frame, orient='horizontal').grid(row=row_offset, column=0, columnspan=self.receivers + 2, sticky="ew", pady=10)
+        row_offset += 1
+
         # Sale Prices
-        ttk.Label(self.tables_frame, text="Sale Prices:").grid(row=row_offset, column=0, padx=5, pady=5)
+        ttk.Label(self.tables_frame, text="Sale Prices:", style="Header.TLabel", font=("Arial", 10, "bold")).grid(row=row_offset, column=0, padx=5, pady=5)
         self.sale_entries = []
         for j in range(self.receivers):
             entry = ttk.Entry(self.tables_frame, width=5)
@@ -103,8 +172,11 @@ class IntermediaryProblemApp:
             self.sale_entries.append(entry)
         row_offset += 2
 
+        ttk.Separator(self.tables_frame, orient='horizontal').grid(row=row_offset, column=0, columnspan=self.receivers + 2, sticky="ew", pady=10)
+        row_offset += 1
+
         # Transport Costs
-        ttk.Label(self.tables_frame, text="Transport Costs:").grid(row=row_offset, column=0, padx=5, pady=5)
+        ttk.Label(self.tables_frame, text="Transport Costs:", style="Header.TLabel", font=("Arial", 10, "bold")).grid(row=row_offset, column=0, padx=5, pady=5)
         self.transport_entries = []
         for i in range(self.suppliers):
             ttk.Label(self.tables_frame, text=f"O{i+1}").grid(row=row_offset + i + 1, column=0, padx=5, pady=5)
@@ -120,23 +192,15 @@ class IntermediaryProblemApp:
             self.transport_entries.append(row_entries)
         row_offset += self.suppliers + 2
 
-        # Contract Options
-        ttk.Label(self.tables_frame, text="Contract Options:").grid(row=row_offset, column=0, padx=5, pady=5)
-        if contract:
-            self.contract_var = tk.StringVar(value=contract)
-        else:
-            self.contract_var = tk.StringVar(value="None")
+        ttk.Separator(self.tables_frame, orient='horizontal').grid(row=row_offset, column=0, columnspan=max(self.suppliers, self.receivers) + 2, sticky="ew", pady=10)
+        row_offset += 1
 
+        # Contract
+        ttk.Label(self.tables_frame, text="Contract Options:", style="Header.TLabel", font=("Arial", 10, "bold")).grid(row=row_offset, column=0, padx=5, pady=5)
+        self.contract_var = tk.StringVar(value=contract or "None")
         contract_options = ["None"] + [f"O{i+1}" for i in range(self.suppliers)] + [f"D{j+1}" for j in range(self.receivers)]
         self.contract_menu = ttk.OptionMenu(self.tables_frame, self.contract_var, self.contract_var.get(), *contract_options)
         self.contract_menu.grid(row=row_offset, column=1, columnspan=max(self.receivers, 1), padx=5, pady=5)
-
-
-        ttk.Label(self.tables_frame, text="Contract Options:").grid(row=10+self.suppliers, column=0, padx=5, pady=5)
-        self.contract_var = tk.StringVar(value="None")
-        contract_options = ["None"] + [f"D{i+1}" for i in range(self.suppliers)] + [f"O{j+1}" for j in range(self.receivers)]
-        self.contract_menu = ttk.OptionMenu(self.tables_frame, self.contract_var, *contract_options)
-        self.contract_menu.grid(row=10+self.suppliers, column=1, columnspan=self.receivers, padx=5, pady=5)
 
     def get_inputs(self):
         try:
@@ -191,7 +255,7 @@ class IntermediaryProblemApp:
             f"Czy istnieją alternatywne plany dostaw: {'Tak' if has_alt_plans else 'Nie'}"
         )
         self.update_results(output)
-    
+
     def save_to_excel(self):
         inputs = self.get_inputs()
         if inputs is None:
