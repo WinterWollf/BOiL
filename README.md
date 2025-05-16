@@ -1,7 +1,7 @@
 # Operational Research & Logistics Toolkit
 
 ## Project Overview
-This project has been developed as part of the **Operational Research and Logistics** course. It provides a comprehensive Python-based application for solving two fundamental problems in operations research: the **Critical Path Method (CPM)** for project management and the **Broker Problem** for transportation optimization. The application features an intuitive graphical user interface (GUI) to facilitate data input, analysis, and visualization of results.
+This project has been developed as part of the **Operational Research and Logistics** course. It provides a comprehensive Python-based application for solving two fundamental problems in operations research: the **Critical Path Method (CPM)** for project management and the **Broker Problem** for transportation optimization. The application features a modern, intuitive graphical user interface (GUI) to facilitate data input, analysis, and visualization of results.
 
 ## Features
 
@@ -33,14 +33,15 @@ The module accepts project data in two standard formats:
    - Activities with explicit predecessor relationships
    - Duration specifications for each activity
 
-#### Current Functionality:
+#### Functionality:
 - Complete implementation of the CPM algorithm
 - Input validation and error handling
 - Multiple visualization options with customizable displays
 - User-friendly GUI for data input and analysis
+- Import/export of data to CSV and Excel
 
 ### 2. Broker Problem
-The Broker Problem module addresses transportation optimization in supplier-customer networks. When fully implemented, it will calculate:
+The Broker Problem module addresses transportation optimization in supplier-customer networks. The module is fully implemented and allows:
 
 - **Economic Metrics:**
   - Total transportation costs
@@ -52,21 +53,32 @@ The Broker Problem module addresses transportation optimization in supplier-cust
   - Unit profit analysis
   - Supply and demand balancing
 
-#### Current Status:
-- Module framework established
-- GUI components planned
-- Implementation in progress
+- **Modern GUI:**
+  - Clean, modern, and user-friendly interface
+  - Dynamic tables for data entry
+  - Contract options for suppliers and receivers
+  - Results displayed in a clear, readable format
+  - Import and export of data from/to Excel files
+
+#### Functionality:
+- Full solution of the broker problem with all calculations
+- Data validation and error handling
+- Saving and loading problem data and results to/from Excel
+- Intuitive and visually appealing interface
 
 ## Technologies
 
 ### Core Components:
-- **Programming Language:** Python 3.11+
+- **Programming Language:** Python 3.12+
 
 ### Key Libraries:
 - **Tkinter:** GUI development framework
 - **Matplotlib:** Data visualization and charting
 - **NetworkX:** Graph-based calculations and network visualization
 - **Pillow:** Image processing for GUI elements
+- **NumPy:** Numerical computations
+- **Pandas:** Data manipulation and Excel I/O
+- **openpyxl:** Excel file support
 
 ### Interface:
 - Cross-platform desktop application
@@ -76,12 +88,15 @@ The Broker Problem module addresses transportation optimization in supplier-cust
 ## Project Structure
 The codebase is organized into the following components:
 
-- **`activity.py`**: Defines the `Activity` class and data parsing utilities
-- **`cpm.py`**: Implements the CPM algorithm and visualization methods
-- **`cpm_window.py`**: Handles the graphical user interface for the CPM module
-- **`main_window.py`**: Provides the main application menu and navigation
-- **`main.py`**: Application entry point with example implementations
-- **`gui_paths.py`**: Manages asset and resource paths for the interface
+- **`CPM/activity.py`**: Defines the `Activity` class and data parsing utilities
+- **`CPM/cpm.py`**: Implements the CPM algorithm and visualization methods
+- **`CPM/cpm_window.py`**: Handles the graphical user interface for the CPM module
+- **`CPM/main_window.py`**: Provides the main application menu and navigation
+- **`CPM/table.py`**: Table view and Excel export for CPM results
+- **`CPM/gui_paths.py`**: Manages asset and resource paths for the interface
+- **`Broker/broker.py`**: Implements the broker problem algorithm and calculations
+- **`Broker/gui.py`**: Modern GUI for the broker problem, including Excel import/export
+- **`main.py`**: Application entry point
 
 ## Installation & Usage
 
@@ -97,7 +112,7 @@ The codebase is organized into the following components:
 
 2. Install dependencies:
    ```bash
-   pip install matplotlib networkx pillow
+   pip install matplotlib networkx pillow numpy pandas openpyxl
    ```
 
 3. Run the application:
