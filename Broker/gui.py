@@ -13,6 +13,18 @@ class IntermediaryProblemApp:
         self.root.geometry("1000x700")
         self.root.minsize(1024, 768)
 
+        window_width = 1024
+        window_height = 768
+
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+        x_coordinate = (screen_width / 2) - (window_width / 2)
+        y_coordinate = (screen_height / 2) - (window_height / 2)
+
+        root.geometry(f"{window_width}x{window_height}+{int(x_coordinate)}+{int(y_coordinate)}")
+
+
         self.main_color = "#4076FF"
         self.text_color = "#000000"
         self.white = "#ffffff"
