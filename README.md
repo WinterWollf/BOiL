@@ -101,7 +101,7 @@ The codebase is organized into the following components:
 ## Installation & Usage
 
 ### Requirements:
-- Python 3.11 or higher
+- Python 3.12 or higher
 - Required libraries (installable via pip)
 
 ### Setup:
