@@ -266,7 +266,7 @@ class IntermediaryProblemApp:
             f"ZC: {total_profit:.2f}\n\n",
             f"Czy istnieją alternatywne plany dostaw: {'Tak' if has_alt_plans else 'Nie'}"
         )
-        self.update_results(output)
+        self.update_results("\n".join(output))
 
     def save_to_excel(self):
         inputs = self.get_inputs()
